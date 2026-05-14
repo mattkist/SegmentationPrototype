@@ -1,0 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Outfit:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased text-ink bg-surface;
+  }
+  body {
+    @apply min-h-screen;
+  }
+}
+
+/* Radix tooltip content: allow line breaks in long hints */
+[data-radix-tooltip-content] {
+  max-height: min(70vh, 28rem);
+  overflow-y: auto;
+  white-space: pre-wrap;
+}

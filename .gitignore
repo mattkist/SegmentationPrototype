@@ -1,0 +1,41 @@
+backend/**/segmentation.db
+backend/**/segmentation.db-shm
+backend/**/segmentation.db-wal
+backend/**/segmentation.design.db
+**/bin/
+**/obj/
+.vs/
+frontend/node_modules/
+frontend/dist/
+
+nul
+
+
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+packages/
+## NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+## User-specific
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+## OS
+Thumbs.db
+desktop.ini
+.DS_Store
