@@ -3,6 +3,11 @@ export interface CropSeasonDto {
   code: string
 }
 
+export interface CultureTypeDto {
+  code: string
+  name: string
+}
+
 export interface FarmerListItemDto {
   farmerId: string
   farmerCode: string
@@ -116,6 +121,7 @@ export interface KpiImportResultDto {
 export interface SegmentationConfigurationSummaryDto {
   id: string
   name: string
+  cultureTypeCode: string
   maximumScore: number
 }
 
@@ -269,6 +275,7 @@ export interface SegmentationScaleDetailDto extends SegmentationScaleWriteDto {
 export interface SegmentationConfigurationDetailDto {
   id: string
   name: string
+  cultureTypeCode: string
   maximumScore: number
   segments: SegmentationSegmentDto[]
   loyalty: SegmentationLoyaltyDetailDto
@@ -282,6 +289,7 @@ export interface SegmentationConfigurationDetailDto {
 
 export interface SaveSegmentationConfigurationDto {
   name: string
+  cultureTypeCode: string
   maximumScore: number
   segments: SegmentationSegmentDto[]
   loyalty: SegmentationLoyaltyWriteDto

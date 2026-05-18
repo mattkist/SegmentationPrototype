@@ -14,6 +14,9 @@ public class SegmentationSimulation
     public int CropSeasonId { get; set; }
     public CropSeason CropSeason { get; set; } = null!;
 
+    public required string CultureTypeCode { get; set; }
+    public CultureType CultureType { get; set; } = null!;
+
     public DateTime SimulationDate { get; set; }
 
     /// <summary>S = Simulation, O = Official.</summary>

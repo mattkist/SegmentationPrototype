@@ -10,6 +10,9 @@ public class QualityKpi
     public int CropSeasonId { get; set; }
     public CropSeason CropSeason { get; set; } = null!;
 
+    public required string CultureTypeCode { get; set; }
+    public CultureType CultureType { get; set; } = null!;
+
     public int Iqs { get; set; }
 
     public bool HadNtrm { get; set; }

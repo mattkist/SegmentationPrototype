@@ -28,8 +28,22 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             || configuration.Scale is null)
             throw new InvalidOperationException("The segmentation configuration is missing one or more KPI blocks.");
 
-        var farmers = await db.Farmers.AsNoTracking().OrderBy(f => f.Code).ToListAsync(cancellationToken);
-        var histories = await BuildHistoriesAsync(farmers.Select(f => f.Id).ToList(), cancellationToken);
+        var cultureTypeCode = configuration.CultureTypeCode;
+
+        // Only include farmers that have at least one KPI row for this CultureType.
+        var farmerIdsWithKpis = await GetFarmerIdsWithKpisForCultureTypeAsync(cultureTypeCode, cancellationToken);
+
+        var farmers = await db.Farmers.AsNoTracking()
+            .Where(f => farmerIdsWithKpis.Contains(f.Id))
+            .OrderBy(f => f.Code)
+            .ToListAsync(cancellationToken);
+
+        if (farmers.Count == 0)
+            throw new InvalidOperationException(
+                $"No farmers have KPI data for culture type '{cultureTypeCode}'. Cannot run simulation.");
+
+        var histories = await BuildHistoriesAsync(
+            farmers.Select(f => f.Id).ToList(), cultureTypeCode, cancellationToken);
 
         var simId = Guid.NewGuid();
         var rows = new List<SegmentationSimulationFarmer>(farmers.Count);
@@ -75,6 +89,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             Id = simId,
             SegmentationConfigurationId = configuration.Id,
             CropSeasonId = dto.CropSeasonId,
+            CultureTypeCode = cultureTypeCode,
             SimulationDate = DateTime.UtcNow,
             Status = "S",
             Farmers = rows
@@ -84,6 +99,29 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         await db.SaveChangesAsync(cancellationToken);
 
         return (await MapDetailAsync(simId, cancellationToken))!;
+    }
+
+    private async Task<HashSet<Guid>> GetFarmerIdsWithKpisForCultureTypeAsync(
+        string cultureTypeCode, CancellationToken cancellationToken)
+    {
+        var ids = new HashSet<Guid>();
+
+        ids.UnionWith(await db.LoyaltyKpis.AsNoTracking()
+            .Where(k => k.CultureTypeCode == cultureTypeCode).Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.QualityKpis.AsNoTracking()
+            .Where(k => k.CultureTypeCode == cultureTypeCode).Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.FinancialKpis.AsNoTracking()
+            .Where(k => k.CultureTypeCode == cultureTypeCode).Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.YieldKpis.AsNoTracking()
+            .Where(k => k.CultureTypeCode == cultureTypeCode).Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.ScaleKpis.AsNoTracking()
+            .Where(k => k.CultureTypeCode == cultureTypeCode).Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.TechnologiesKpis.AsNoTracking()
+            .Where(k => k.CultureTypeCode == cultureTypeCode).Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.EsgKpis.AsNoTracking()
+            .Where(k => k.CultureTypeCode == cultureTypeCode).Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+
+        return ids;
     }
 
     public async Task<IReadOnlyList<SegmentationSimulationSummaryDto>> ListAsync(
@@ -107,6 +145,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 ConfigurationName = s.SegmentationConfiguration.Name,
                 CropSeasonId = s.CropSeasonId,
                 CropSeasonCode = s.CropSeason.Code,
+                CultureTypeCode = s.CultureTypeCode,
                 SimulationDate = s.SimulationDate,
                 Status = s.Status,
                 FarmerCount = s.Farmers.Count
@@ -189,6 +228,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
 
     private async Task<Dictionary<Guid, FarmerKpiHistory>> BuildHistoriesAsync(
         IReadOnlyList<Guid> farmerIds,
+        string cultureTypeCode,
         CancellationToken cancellationToken)
     {
         if (farmerIds.Count == 0)
@@ -199,7 +239,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             .ToDictionaryAsync(f => f.Id, cancellationToken);
 
         var loyaltyRows = await db.LoyaltyKpis.AsNoTracking()
-            .Where(k => farmerIds.Contains(k.FarmerId))
+            .Where(k => farmerIds.Contains(k.FarmerId) && k.CultureTypeCode == cultureTypeCode)
             .Select(k => new { k.FarmerId, k.CropSeasonId, k.DeliveredPercentage })
             .ToListAsync(cancellationToken);
         var loyalty = loyaltyRows.GroupBy(x => x.FarmerId)
@@ -208,7 +248,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 g => (IReadOnlyDictionary<int, int>)g.ToDictionary(x => x.CropSeasonId, x => x.DeliveredPercentage));
 
         var qualityRows = await db.QualityKpis.AsNoTracking()
-            .Where(k => farmerIds.Contains(k.FarmerId))
+            .Where(k => farmerIds.Contains(k.FarmerId) && k.CultureTypeCode == cultureTypeCode)
             .Select(k => new
             {
                 k.FarmerId,
@@ -226,7 +266,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                     x => new QualityKpiSnapshot(x.Iqs, x.HadNtrm, x.HadQualityMixture)));
 
         var financialRows = await db.FinancialKpis.AsNoTracking()
-            .Where(k => farmerIds.Contains(k.FarmerId))
+            .Where(k => farmerIds.Contains(k.FarmerId) && k.CultureTypeCode == cultureTypeCode)
             .Select(k => new { k.FarmerId, k.CropSeasonId, k.SelfFundingPercentage, k.HaveDebt })
             .ToListAsync(cancellationToken);
         var financial = financialRows.GroupBy(x => x.FarmerId)
@@ -237,7 +277,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                     x => new FinancialKpiSnapshot(x.SelfFundingPercentage, x.HaveDebt)));
 
         var technologiesRows = await db.TechnologiesKpis.AsNoTracking()
-            .Where(k => farmerIds.Contains(k.FarmerId))
+            .Where(k => farmerIds.Contains(k.FarmerId) && k.CultureTypeCode == cultureTypeCode)
             .Select(k => new
             {
                 k.FarmerId,
@@ -258,7 +298,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                         x.HasTechnologyPackageAdherence)));
 
         var esgRows = await db.EsgKpis.AsNoTracking()
-            .Where(k => farmerIds.Contains(k.FarmerId))
+            .Where(k => farmerIds.Contains(k.FarmerId) && k.CultureTypeCode == cultureTypeCode)
             .Select(k => new
             {
                 k.FarmerId,
@@ -281,7 +321,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                         x.HasMajorIrregularity)));
 
         var yieldRows = await db.YieldKpis.AsNoTracking()
-            .Where(k => farmerIds.Contains(k.FarmerId))
+            .Where(k => farmerIds.Contains(k.FarmerId) && k.CultureTypeCode == cultureTypeCode)
             .Select(k => new { k.FarmerId, k.CropSeasonId, k.Yield })
             .ToListAsync(cancellationToken);
         var yieldByFarmer = yieldRows.GroupBy(x => x.FarmerId)
@@ -290,7 +330,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 g => (IReadOnlyDictionary<int, int>)g.ToDictionary(x => x.CropSeasonId, x => x.Yield));
 
         var scaleRows = await db.ScaleKpis.AsNoTracking()
-            .Where(k => farmerIds.Contains(k.FarmerId))
+            .Where(k => farmerIds.Contains(k.FarmerId) && k.CultureTypeCode == cultureTypeCode)
             .Select(k => new { k.FarmerId, k.CropSeasonId, k.Scale })
             .ToListAsync(cancellationToken);
         var scaleByFarmer = scaleRows.GroupBy(x => x.FarmerId)
@@ -365,6 +405,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             ConfigurationName = s.SegmentationConfiguration.Name,
             CropSeasonId = s.CropSeasonId,
             CropSeasonCode = s.CropSeason.Code,
+            CultureTypeCode = s.CultureTypeCode,
             SimulationDate = s.SimulationDate,
             Status = s.Status,
             Farmers = farmers

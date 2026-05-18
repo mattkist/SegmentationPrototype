@@ -5,6 +5,7 @@ namespace Segmentation.Infrastructure.Persistence;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<CultureType> CultureTypes => Set<CultureType>();
     public DbSet<CropSeason> CropSeasons => Set<CropSeason>();
     public DbSet<Farmer> Farmers => Set<Farmer>();
     public DbSet<FarmerCluster> FarmerClusters => Set<FarmerCluster>();
@@ -44,6 +45,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<CultureType>(e =>
+        {
+            e.ToTable("CultureTypes");
+            e.HasKey(x => x.Code);
+            e.Property(x => x.Code).HasMaxLength(8).IsRequired();
+            e.Property(x => x.Name).HasMaxLength(64).IsRequired();
+        });
+
         modelBuilder.Entity<CropSeason>(e =>
         {
             e.ToTable("CropSeasons");
@@ -82,57 +91,71 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.ToTable("LoyaltyKpis");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.Farmer).WithMany(x => x.LoyaltyKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
         modelBuilder.Entity<QualityKpi>(e =>
         {
             e.ToTable("QualityKpis");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.Farmer).WithMany(x => x.QualityKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
         modelBuilder.Entity<FinancialKpi>(e =>
         {
             e.ToTable("FinancialKpis");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.Farmer).WithMany(x => x.FinancialKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
         modelBuilder.Entity<YieldKpi>(e =>
         {
             e.ToTable("YieldKpis");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.Farmer).WithMany(x => x.YieldKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
         modelBuilder.Entity<ScaleKpi>(e =>
         {
             e.ToTable("ScaleKpis");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.Farmer).WithMany(x => x.ScaleKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
         modelBuilder.Entity<TechnologiesKpi>(e =>
         {
             e.ToTable("TechnologiesKpis");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.Farmer).WithMany(x => x.TechnologiesKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
         modelBuilder.Entity<EsgKpi>(e =>
         {
             e.ToTable("EsgKpis");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.Farmer).WithMany(x => x.EsgKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
 
         modelBuilder.Entity<SegmentationConfiguration>(e =>
@@ -140,6 +163,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("SegmentationConfigurations");
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).HasMaxLength(256).IsRequired();
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Segments).WithOne(x => x.SegmentationConfiguration).HasForeignKey(x => x.SegmentationConfigurationId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Loyalty).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationLoyalty>(x => x.SegmentationConfigurationId)
@@ -308,9 +333,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("SegmentationSimulations");
             e.HasKey(x => x.Id);
             e.Property(x => x.Status).HasMaxLength(1).IsRequired();
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.SegmentationConfiguration).WithMany(x => x.Simulations).HasForeignKey(x => x.SegmentationConfigurationId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Farmers).WithOne(x => x.SegmentationSimulation).HasForeignKey(x => x.SegmentationSimulationId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

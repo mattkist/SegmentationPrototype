@@ -20,7 +20,8 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             {
                 Id = c.Id,
                 Name = c.Name,
-                MaximumScore = c.MaximumScore
+                MaximumScore = c.MaximumScore,
+                CultureTypeCode = c.CultureTypeCode
             })
             .ToListAsync(cancellationToken);
     }
@@ -35,6 +36,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         SaveSegmentationConfigurationDto dto,
         CancellationToken cancellationToken = default)
     {
+        await ValidateCultureTypeAsync(dto.CultureTypeCode, cancellationToken);
         await ValidateCropSeasonReferencesAsync(dto, cancellationToken);
         EnsureNonEmptySegments(dto.Segments);
 
@@ -60,6 +62,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         SaveSegmentationConfigurationDto dto,
         CancellationToken cancellationToken = default)
     {
+        await ValidateCultureTypeAsync(dto.CultureTypeCode, cancellationToken);
         await ValidateCropSeasonReferencesAsync(dto, cancellationToken);
         EnsureNonEmptySegments(dto.Segments);
 
@@ -80,6 +83,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
             entity.Name = dto.Name;
             entity.MaximumScore = dto.MaximumScore;
+            entity.CultureTypeCode = dto.CultureTypeCode;
 
             await SyncSegmentsAsync(entity, dto.Segments, cancellationToken);
 
@@ -223,6 +227,12 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
     {
         if (segments.Count == 0)
             throw new ArgumentException("At least one segment is required.", nameof(segments));
+    }
+
+    private async Task ValidateCultureTypeAsync(string cultureTypeCode, CancellationToken cancellationToken)
+    {
+        if (!await db.CultureTypes.AnyAsync(c => c.Code == cultureTypeCode, cancellationToken))
+            throw new ArgumentException($"Unknown culture type code '{cultureTypeCode}'.", nameof(cultureTypeCode));
     }
 
     private async Task ValidateCropSeasonReferencesAsync(
@@ -787,6 +797,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             Id = id,
             Name = dto.Name,
             MaximumScore = dto.MaximumScore,
+            CultureTypeCode = dto.CultureTypeCode,
             Segments = dto.Segments.Select(s => new SegmentationSegment
             {
                 Id = s.Id ?? Guid.NewGuid(),
@@ -819,6 +830,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         {
             Name = nameOverride ?? c.Name,
             MaximumScore = c.MaximumScore,
+            CultureTypeCode = c.CultureTypeCode,
             Segments = c.Segments
                 .OrderBy(s => s.RangeMin ?? int.MaxValue)
                 .Select(s => new SegmentationSegmentDto
@@ -966,6 +978,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             Id = c.Id,
             Name = c.Name,
             MaximumScore = c.MaximumScore,
+            CultureTypeCode = c.CultureTypeCode,
             Segments = c.Segments
                 .OrderBy(s => s.RangeMin ?? int.MaxValue)
                 .Select(s => new SegmentationSegmentDto

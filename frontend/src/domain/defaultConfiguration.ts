@@ -5,6 +5,7 @@ import { syncRelevancesFromCaps } from './kpiRelevanceCaps'
 export function createDefaultConfiguration(): SaveSegmentationConfigurationDto {
   return syncRelevancesFromCaps({
     name: 'New configuration',
+    cultureTypeCode: 'FCV',
     maximumScore: 100,
     segments: [
       {

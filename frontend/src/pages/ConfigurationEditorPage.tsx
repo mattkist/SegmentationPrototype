@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as Tabs from '@radix-ui/react-tabs'
 import { apiGet, apiPatch, apiPost, apiPut, ApiRequestError } from '../api/client'
-import type { SegmentationConfigurationDetailDto, SaveSegmentationConfigurationDto } from '../api/types'
+import type { CultureTypeDto, SegmentationConfigurationDetailDto, SaveSegmentationConfigurationDto } from '../api/types'
 import { createDefaultConfiguration } from '../domain/defaultConfiguration'
 import { detailToSaveDto, bodyForSave, isOnlyConfigurationNameChange } from '../domain/configurationMapper'
 import { deriveKpiMaxScores } from '../domain/deriveKpiMax'
@@ -39,6 +39,11 @@ export function ConfigurationEditorPage() {
     },
     [],
   )
+
+  const cultureTypesQuery = useQuery({
+    queryKey: ['cultureTypes'],
+    queryFn: () => apiGet<CultureTypeDto[]>('/api/CultureTypes'),
+  })
 
   const detailQuery = useQuery({
     queryKey: ['config', id],
@@ -155,16 +160,35 @@ export function ConfigurationEditorPage() {
         </button>
       </div>
 
-      <label className="block max-w-xl text-sm">
-        <FieldLabel label="Configuration name" hint="Shown in lists and simulation picker." />
-        <input
-          className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm"
-          value={draft.name}
-          onChange={(e) =>
-            setDraftNormalized((d) => (d ? { ...d, name: e.target.value } : d))
-          }
-        />
-      </label>
+      <div className="flex max-w-xl flex-wrap items-end gap-4">
+        <label className="block flex-1 text-sm">
+          <FieldLabel label="Configuration name" hint="Shown in lists and simulation picker." />
+          <input
+            className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm"
+            value={draft.name}
+            onChange={(e) =>
+              setDraftNormalized((d) => (d ? { ...d, name: e.target.value } : d))
+            }
+          />
+        </label>
+
+        <label className="block w-44 text-sm">
+          <FieldLabel label="Culture type" hint="Tobacco culture type for this configuration." />
+          <select
+            className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm"
+            value={draft.cultureTypeCode}
+            onChange={(e) =>
+              setDraftNormalized((d) => ({ ...d, cultureTypeCode: e.target.value }))
+            }
+          >
+            {cultureTypesQuery.data?.map((ct) => (
+              <option key={ct.code} value={ct.code}>
+                {ct.code} – {ct.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
         <KpiTotalsBanner draft={draft} setDraft={setDraftNormalized} />
 

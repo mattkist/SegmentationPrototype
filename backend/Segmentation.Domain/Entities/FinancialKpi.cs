@@ -10,6 +10,9 @@ public class FinancialKpi
     public int CropSeasonId { get; set; }
     public CropSeason CropSeason { get; set; } = null!;
 
+    public required string CultureTypeCode { get; set; }
+    public CultureType CultureType { get; set; } = null!;
+
     public int SelfFundingPercentage { get; set; }
 
     public bool HaveDebt { get; set; }

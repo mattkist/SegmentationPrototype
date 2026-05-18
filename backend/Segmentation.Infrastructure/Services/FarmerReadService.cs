@@ -124,13 +124,14 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
         var kpis = new FarmerKpisForSeasonDto(
             loyalty is null
                 ? null
-                : new LoyaltyKpiRowDto(farmerCode, season.Id, season.Code, loyalty.DeliveredPercentage),
+                : new LoyaltyKpiRowDto(farmerCode, season.Id, season.Code, loyalty.CultureTypeCode, loyalty.DeliveredPercentage),
             quality is null
                 ? null
                 : new QualityKpiRowDto(
                     farmerCode,
                     season.Id,
                     season.Code,
+                    quality.CultureTypeCode,
                     quality.Iqs,
                     quality.HadNtrm,
                     quality.HadQualityMixture),
@@ -140,16 +141,18 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                     farmerCode,
                     season.Id,
                     season.Code,
+                    financial.CultureTypeCode,
                     financial.SelfFundingPercentage,
                     financial.HaveDebt),
-            yield is null ? null : new YieldKpiRowDto(farmerCode, season.Id, season.Code, yield.Yield),
-            scale is null ? null : new ScaleKpiRowDto(farmerCode, season.Id, season.Code, scale.Scale),
+            yield is null ? null : new YieldKpiRowDto(farmerCode, season.Id, season.Code, yield.CultureTypeCode, yield.Yield),
+            scale is null ? null : new ScaleKpiRowDto(farmerCode, season.Id, season.Code, scale.CultureTypeCode, scale.Scale),
             tech is null
                 ? null
                 : new TechnologiesKpiRowDto(
                     farmerCode,
                     season.Id,
                     season.Code,
+                    tech.CultureTypeCode,
                     tech.HasLargeBaseRidgeWithMulch,
                     tech.HasBroadGrateFurnace,
                     tech.HasTechnologyPackageAdherence),
@@ -159,6 +162,7 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                     farmerCode,
                     season.Id,
                     season.Code,
+                    esg.CultureTypeCode,
                     esg.ReforestationPercentage,
                     esg.NativeForestPercentage,
                     esg.HasMinorIrregularity,

@@ -23,10 +23,17 @@ public static class DatabaseSeeder
     private static readonly Guid F900302 = Guid.Parse("90030200-0000-4000-8000-000000000001");
     private static readonly Guid F900303 = Guid.Parse("90030300-0000-4000-8000-000000000001");
 
+    private static readonly HashSet<Guid> BurleyFarmerIds = new() { F900301, F900302, F900303 };
+
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
         if (await db.Farmers.AnyAsync(cancellationToken))
             return;
+
+        db.CultureTypes.AddRange(
+            new CultureType { Code = "FCV", Name = "Virginia" },
+            new CultureType { Code = "BLY", Name = "Burley" },
+            new CultureType { Code = "CO", Name = "Comum" });
 
         db.CropSeasons.AddRange(
             new CropSeason { Id = 2024, Code = "2024" },
@@ -63,7 +70,7 @@ public static class DatabaseSeeder
         var gid = new SequentialGuidGenerator("c0000000-0000-4000-8000-000000000000");
 
         foreach (var (farmerId, season, d) in LoyaltySeed())
-            db.LoyaltyKpis.Add(new LoyaltyKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, DeliveredPercentage = d });
+            db.LoyaltyKpis.Add(new LoyaltyKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, CultureTypeCode = CultureFor(farmerId), DeliveredPercentage = d });
 
         foreach (var row in QualitySeed())
             db.QualityKpis.Add(new QualityKpi
@@ -71,6 +78,7 @@ public static class DatabaseSeeder
                 Id = gid.Next(),
                 FarmerId = row.FarmerId,
                 CropSeasonId = row.Season,
+                CultureTypeCode = CultureFor(row.FarmerId),
                 Iqs = row.Iqs,
                 HadNtrm = row.Ntrm,
                 HadQualityMixture = row.Mixture
@@ -82,15 +90,16 @@ public static class DatabaseSeeder
                 Id = gid.Next(),
                 FarmerId = farmerId,
                 CropSeasonId = season,
+                CultureTypeCode = CultureFor(farmerId),
                 SelfFundingPercentage = sf,
                 HaveDebt = debt
             });
 
         foreach (var (farmerId, season, y) in YieldSeed())
-            db.YieldKpis.Add(new YieldKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, Yield = y });
+            db.YieldKpis.Add(new YieldKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, CultureTypeCode = CultureFor(farmerId), Yield = y });
 
         foreach (var (farmerId, season, s) in ScaleSeed())
-            db.ScaleKpis.Add(new ScaleKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, Scale = s });
+            db.ScaleKpis.Add(new ScaleKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, CultureTypeCode = CultureFor(farmerId), Scale = s });
 
         foreach (var row in TechnologiesSeed())
             db.TechnologiesKpis.Add(new TechnologiesKpi
@@ -98,6 +107,7 @@ public static class DatabaseSeeder
                 Id = gid.Next(),
                 FarmerId = row.FarmerId,
                 CropSeasonId = row.Season,
+                CultureTypeCode = CultureFor(row.FarmerId),
                 HasLargeBaseRidgeWithMulch = row.Mulch,
                 HasBroadGrateFurnace = row.Furnace,
                 HasTechnologyPackageAdherence = row.Package
@@ -109,6 +119,7 @@ public static class DatabaseSeeder
                 Id = gid.Next(),
                 FarmerId = row.FarmerId,
                 CropSeasonId = row.Season,
+                CultureTypeCode = CultureFor(row.FarmerId),
                 ReforestationPercentage = row.Ref,
                 NativeForestPercentage = row.Native,
                 HasMinorIrregularity = row.Minor,
@@ -267,6 +278,9 @@ public static class DatabaseSeeder
             yield return (F900303, s, 5, 4, false, true);
         }
     }
+
+    private static string CultureFor(Guid farmerId) =>
+        BurleyFarmerIds.Contains(farmerId) ? "BLY" : "FCV";
 
     /// <summary>Deterministic GUID sequence for seed rows.</summary>
     private sealed class SequentialGuidGenerator

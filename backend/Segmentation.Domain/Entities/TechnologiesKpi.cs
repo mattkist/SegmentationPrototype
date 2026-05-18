@@ -10,6 +10,9 @@ public class TechnologiesKpi
     public int CropSeasonId { get; set; }
     public CropSeason CropSeason { get; set; } = null!;
 
+    public required string CultureTypeCode { get; set; }
+    public CultureType CultureType { get; set; } = null!;
+
     public bool HasLargeBaseRidgeWithMulch { get; set; }
 
     public bool HasBroadGrateFurnace { get; set; }

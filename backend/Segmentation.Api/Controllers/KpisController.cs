@@ -11,32 +11,32 @@ public sealed class KpisController(
     IKpiImportService kpiImport) : ControllerBase
 {
     [HttpGet("loyalty")]
-    public Task<IActionResult> LoyaltyAsync([FromQuery] int cropSeasonId, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, kpis.ListLoyaltyAsync, cancellationToken);
+    public Task<IActionResult> LoyaltyAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListLoyaltyAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpGet("quality")]
-    public Task<IActionResult> QualityAsync([FromQuery] int cropSeasonId, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, kpis.ListQualityAsync, cancellationToken);
+    public Task<IActionResult> QualityAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListQualityAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpGet("financial")]
-    public Task<IActionResult> FinancialAsync([FromQuery] int cropSeasonId, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, kpis.ListFinancialAsync, cancellationToken);
+    public Task<IActionResult> FinancialAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListFinancialAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpGet("yield")]
-    public Task<IActionResult> YieldAsync([FromQuery] int cropSeasonId, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, kpis.ListYieldAsync, cancellationToken);
+    public Task<IActionResult> YieldAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListYieldAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpGet("scale")]
-    public Task<IActionResult> ScaleAsync([FromQuery] int cropSeasonId, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, kpis.ListScaleAsync, cancellationToken);
+    public Task<IActionResult> ScaleAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListScaleAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpGet("technologies")]
-    public Task<IActionResult> TechnologiesAsync([FromQuery] int cropSeasonId, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, kpis.ListTechnologiesAsync, cancellationToken);
+    public Task<IActionResult> TechnologiesAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListTechnologiesAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpGet("esg")]
-    public Task<IActionResult> EsgAsync([FromQuery] int cropSeasonId, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, kpis.ListEsgAsync, cancellationToken);
+    public Task<IActionResult> EsgAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListEsgAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpPost("loyalty/import")]
     [Consumes("multipart/form-data")]

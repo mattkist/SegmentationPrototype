@@ -8,6 +8,7 @@ import { syncRelevancesFromCaps } from './kpiRelevanceCaps'
 export function detailToSaveDto(d: SegmentationConfigurationDetailDto): SaveSegmentationConfigurationDto {
   const base: SaveSegmentationConfigurationDto = {
     name: d.name,
+    cultureTypeCode: d.cultureTypeCode,
     maximumScore: d.maximumScore,
     segments: d.segments.map((s) => ({
       id: s.id,

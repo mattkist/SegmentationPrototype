@@ -13,6 +13,7 @@ public sealed class SegmentationSimulationSummaryDto
     public required string ConfigurationName { get; init; }
     public int CropSeasonId { get; init; }
     public required string CropSeasonCode { get; init; }
+    public required string CultureTypeCode { get; init; }
     public DateTime SimulationDate { get; init; }
     public required string Status { get; init; }
     public int FarmerCount { get; init; }
@@ -44,6 +45,7 @@ public sealed class SegmentationSimulationDetailDto
     public required string ConfigurationName { get; init; }
     public int CropSeasonId { get; init; }
     public required string CropSeasonCode { get; init; }
+    public required string CultureTypeCode { get; init; }
     public DateTime SimulationDate { get; init; }
     public required string Status { get; init; }
     public required IReadOnlyList<SegmentationSimulationFarmerDto> Farmers { get; init; }

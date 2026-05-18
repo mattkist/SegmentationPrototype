@@ -8,6 +8,9 @@ public class SegmentationConfiguration
 
     public int MaximumScore { get; set; }
 
+    public required string CultureTypeCode { get; set; }
+    public CultureType CultureType { get; set; } = null!;
+
     public ICollection<SegmentationSegment> Segments { get; set; } = new List<SegmentationSegment>();
     public SegmentationConfigurationLoyalty? Loyalty { get; set; }
     public SegmentationConfigurationQuality? Quality { get; set; }

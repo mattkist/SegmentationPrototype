@@ -100,64 +100,71 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
     {
         var farmerCode = GetRequiredString(csv, "farmercode");
         var cropSeasonId = GetRequiredInt(csv, "cropseasonid");
+        var cultureType = GetOptionalString(csv, "culturetypecode") ?? "FCV";
         var delivered = GetRequiredInt(csv, "deliveredpercentage");
-        return new LoyaltyParsed(farmerCode, cropSeasonId, delivered);
+        return new LoyaltyParsed(farmerCode, cropSeasonId, cultureType, delivered);
     }
 
     private static QualityParsed ParseQualityRow(CsvReader csv)
     {
         var farmerCode = GetRequiredString(csv, "farmercode");
         var cropSeasonId = GetRequiredInt(csv, "cropseasonid");
+        var cultureType = GetOptionalString(csv, "culturetypecode") ?? "FCV";
         var iqs = GetRequiredInt(csv, "iqs");
         var hadNtrm = GetRequiredBool(csv, "hadntrm");
         var hadMixture = GetRequiredBool(csv, "hadqualitymixture");
-        return new QualityParsed(farmerCode, cropSeasonId, iqs, hadNtrm, hadMixture);
+        return new QualityParsed(farmerCode, cropSeasonId, cultureType, iqs, hadNtrm, hadMixture);
     }
 
     private static FinancialParsed ParseFinancialRow(CsvReader csv)
     {
         var farmerCode = GetRequiredString(csv, "farmercode");
         var cropSeasonId = GetRequiredInt(csv, "cropseasonid");
+        var cultureType = GetOptionalString(csv, "culturetypecode") ?? "FCV";
         var selfFunding = GetRequiredInt(csv, "selffundingpercentage");
         var haveDebt = GetRequiredBool(csv, "havedebt");
-        return new FinancialParsed(farmerCode, cropSeasonId, selfFunding, haveDebt);
+        return new FinancialParsed(farmerCode, cropSeasonId, cultureType, selfFunding, haveDebt);
     }
 
     private static YieldParsed ParseYieldRow(CsvReader csv)
     {
         var farmerCode = GetRequiredString(csv, "farmercode");
         var cropSeasonId = GetRequiredInt(csv, "cropseasonid");
+        var cultureType = GetOptionalString(csv, "culturetypecode") ?? "FCV";
         var yield = GetRequiredInt(csv, "yield");
-        return new YieldParsed(farmerCode, cropSeasonId, yield);
+        return new YieldParsed(farmerCode, cropSeasonId, cultureType, yield);
     }
 
     private static ScaleParsed ParseScaleRow(CsvReader csv)
     {
         var farmerCode = GetRequiredString(csv, "farmercode");
         var cropSeasonId = GetRequiredInt(csv, "cropseasonid");
+        var cultureType = GetOptionalString(csv, "culturetypecode") ?? "FCV";
         var scale = GetRequiredInt(csv, "scale");
-        return new ScaleParsed(farmerCode, cropSeasonId, scale);
+        return new ScaleParsed(farmerCode, cropSeasonId, cultureType, scale);
     }
 
     private static TechnologiesParsed ParseTechnologiesRow(CsvReader csv)
     {
         var farmerCode = GetRequiredString(csv, "farmercode");
         var cropSeasonId = GetRequiredInt(csv, "cropseasonid");
+        var cultureType = GetOptionalString(csv, "culturetypecode") ?? "FCV";
         var mulch = GetRequiredBool(csv, "haslargebaseridgewithmulch");
         var furnace = GetRequiredBool(csv, "hasbroadgratefurnace");
         var pkg = GetRequiredBool(csv, "hastechnologypackageadherence");
-        return new TechnologiesParsed(farmerCode, cropSeasonId, mulch, furnace, pkg);
+        return new TechnologiesParsed(farmerCode, cropSeasonId, cultureType, mulch, furnace, pkg);
     }
 
     private static EsgParsed ParseEsgRow(CsvReader csv)
     {
         var farmerCode = GetRequiredString(csv, "farmercode");
         var cropSeasonId = GetRequiredInt(csv, "cropseasonid");
+        var cultureType = GetOptionalString(csv, "culturetypecode") ?? "FCV";
         var reforestation = GetRequiredInt(csv, "reforestationpercentage");
         var nativeForest = GetRequiredInt(csv, "nativeforestpercentage");
         var minor = GetRequiredBool(csv, "hasminorirregularity");
         var major = GetRequiredBool(csv, "hasmajorirregularity");
-        return new EsgParsed(farmerCode, cropSeasonId, reforestation, nativeForest, minor, major);
+        return new EsgParsed(farmerCode, cropSeasonId, cultureType, reforestation, nativeForest, minor, major);
     }
 
     // -------------------------
@@ -170,7 +177,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         if (error is not null) return (false, false, error);
 
         var existing = await db.LoyaltyKpis.FirstOrDefaultAsync(
-            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId,
+            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId && k.CultureTypeCode == row.CultureTypeCode,
             cancellationToken);
 
         if (existing is null)
@@ -180,6 +187,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 Id = Guid.NewGuid(),
                 FarmerId = farmerId,
                 CropSeasonId = row.CropSeasonId,
+                CultureTypeCode = row.CultureTypeCode,
                 DeliveredPercentage = row.DeliveredPercentage
             });
             await db.SaveChangesAsync(cancellationToken);
@@ -197,7 +205,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         if (error is not null) return (false, false, error);
 
         var existing = await db.QualityKpis.FirstOrDefaultAsync(
-            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId,
+            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId && k.CultureTypeCode == row.CultureTypeCode,
             cancellationToken);
 
         if (existing is null)
@@ -207,6 +215,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 Id = Guid.NewGuid(),
                 FarmerId = farmerId,
                 CropSeasonId = row.CropSeasonId,
+                CultureTypeCode = row.CultureTypeCode,
                 Iqs = row.Iqs,
                 HadNtrm = row.HadNtrm,
                 HadQualityMixture = row.HadQualityMixture
@@ -228,7 +237,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         if (error is not null) return (false, false, error);
 
         var existing = await db.FinancialKpis.FirstOrDefaultAsync(
-            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId,
+            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId && k.CultureTypeCode == row.CultureTypeCode,
             cancellationToken);
 
         if (existing is null)
@@ -238,6 +247,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 Id = Guid.NewGuid(),
                 FarmerId = farmerId,
                 CropSeasonId = row.CropSeasonId,
+                CultureTypeCode = row.CultureTypeCode,
                 SelfFundingPercentage = row.SelfFundingPercentage,
                 HaveDebt = row.HaveDebt
             });
@@ -257,7 +267,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         if (error is not null) return (false, false, error);
 
         var existing = await db.YieldKpis.FirstOrDefaultAsync(
-            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId,
+            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId && k.CultureTypeCode == row.CultureTypeCode,
             cancellationToken);
 
         if (existing is null)
@@ -267,6 +277,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 Id = Guid.NewGuid(),
                 FarmerId = farmerId,
                 CropSeasonId = row.CropSeasonId,
+                CultureTypeCode = row.CultureTypeCode,
                 Yield = row.Yield
             });
             await db.SaveChangesAsync(cancellationToken);
@@ -284,7 +295,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         if (error is not null) return (false, false, error);
 
         var existing = await db.ScaleKpis.FirstOrDefaultAsync(
-            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId,
+            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId && k.CultureTypeCode == row.CultureTypeCode,
             cancellationToken);
 
         if (existing is null)
@@ -294,6 +305,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 Id = Guid.NewGuid(),
                 FarmerId = farmerId,
                 CropSeasonId = row.CropSeasonId,
+                CultureTypeCode = row.CultureTypeCode,
                 Scale = row.Scale
             });
             await db.SaveChangesAsync(cancellationToken);
@@ -311,7 +323,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         if (error is not null) return (false, false, error);
 
         var existing = await db.TechnologiesKpis.FirstOrDefaultAsync(
-            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId,
+            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId && k.CultureTypeCode == row.CultureTypeCode,
             cancellationToken);
 
         if (existing is null)
@@ -321,6 +333,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 Id = Guid.NewGuid(),
                 FarmerId = farmerId,
                 CropSeasonId = row.CropSeasonId,
+                CultureTypeCode = row.CultureTypeCode,
                 HasLargeBaseRidgeWithMulch = row.HasLargeBaseRidgeWithMulch,
                 HasBroadGrateFurnace = row.HasBroadGrateFurnace,
                 HasTechnologyPackageAdherence = row.HasTechnologyPackageAdherence
@@ -342,7 +355,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         if (error is not null) return (false, false, error);
 
         var existing = await db.EsgKpis.FirstOrDefaultAsync(
-            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId,
+            k => k.FarmerId == farmerId && k.CropSeasonId == row.CropSeasonId && k.CultureTypeCode == row.CultureTypeCode,
             cancellationToken);
 
         if (existing is null)
@@ -352,6 +365,7 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 Id = Guid.NewGuid(),
                 FarmerId = farmerId,
                 CropSeasonId = row.CropSeasonId,
+                CultureTypeCode = row.CultureTypeCode,
                 ReforestationPercentage = row.ReforestationPercentage,
                 NativeForestPercentage = row.NativeForestPercentage,
                 HasMinorIrregularity = row.HasMinorIrregularity,
@@ -401,6 +415,19 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         return value.Trim();
     }
 
+    private static string? GetOptionalString(CsvReader csv, string normalizedName)
+    {
+        try
+        {
+            var value = csv.GetField(normalizedName);
+            return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static int GetRequiredInt(CsvReader csv, string normalizedName)
     {
         var raw = GetRequiredString(csv, normalizedName);
@@ -423,11 +450,11 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
     // Parsed row models
     // -------------------------
 
-    private sealed record LoyaltyParsed(string FarmerCode, int CropSeasonId, int DeliveredPercentage);
-    private sealed record QualityParsed(string FarmerCode, int CropSeasonId, int Iqs, bool HadNtrm, bool HadQualityMixture);
-    private sealed record FinancialParsed(string FarmerCode, int CropSeasonId, int SelfFundingPercentage, bool HaveDebt);
-    private sealed record YieldParsed(string FarmerCode, int CropSeasonId, int Yield);
-    private sealed record ScaleParsed(string FarmerCode, int CropSeasonId, int Scale);
-    private sealed record TechnologiesParsed(string FarmerCode, int CropSeasonId, bool HasLargeBaseRidgeWithMulch, bool HasBroadGrateFurnace, bool HasTechnologyPackageAdherence);
-    private sealed record EsgParsed(string FarmerCode, int CropSeasonId, int ReforestationPercentage, int NativeForestPercentage, bool HasMinorIrregularity, bool HasMajorIrregularity);
+    private sealed record LoyaltyParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int DeliveredPercentage);
+    private sealed record QualityParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int Iqs, bool HadNtrm, bool HadQualityMixture);
+    private sealed record FinancialParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int SelfFundingPercentage, bool HaveDebt);
+    private sealed record YieldParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int Yield);
+    private sealed record ScaleParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int Scale);
+    private sealed record TechnologiesParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, bool HasLargeBaseRidgeWithMulch, bool HasBroadGrateFurnace, bool HasTechnologyPackageAdherence);
+    private sealed record EsgParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int ReforestationPercentage, int NativeForestPercentage, bool HasMinorIrregularity, bool HasMajorIrregularity);
 }

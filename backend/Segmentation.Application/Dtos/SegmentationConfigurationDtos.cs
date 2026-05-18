@@ -5,6 +5,7 @@ public sealed class SegmentationConfigurationSummaryDto
     public required Guid Id { get; init; }
     public required string Name { get; init; }
     public int MaximumScore { get; init; }
+    public required string CultureTypeCode { get; init; }
 }
 
 public sealed class SegmentationConfigurationDetailDto
@@ -12,6 +13,7 @@ public sealed class SegmentationConfigurationDetailDto
     public required Guid Id { get; init; }
     public required string Name { get; init; }
     public int MaximumScore { get; init; }
+    public required string CultureTypeCode { get; init; }
     public required IReadOnlyList<SegmentationSegmentDto> Segments { get; init; }
     public required SegmentationLoyaltyDetailDto Loyalty { get; init; }
     public required SegmentationQualityDetailDto Quality { get; init; }
@@ -194,6 +196,7 @@ public sealed class SaveSegmentationConfigurationDto
 {
     public required string Name { get; init; }
     public int MaximumScore { get; init; }
+    public required string CultureTypeCode { get; init; }
     public required IReadOnlyList<SegmentationSegmentDto> Segments { get; init; }
     public required SegmentationLoyaltyWriteDto Loyalty { get; init; }
     public required SegmentationQualityWriteDto Quality { get; init; }

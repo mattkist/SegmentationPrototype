@@ -57,6 +57,7 @@ export function ConfigurationsPage() {
             <thead className="border-b border-black/5 bg-surface-muted/80 text-xs font-semibold uppercase tracking-wide text-ink-faint">
               <tr>
                 <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Culture type</th>
                 <th className="px-4 py-3">Maximum score</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -65,6 +66,7 @@ export function ConfigurationsPage() {
               {data.map((c) => (
                 <tr key={c.id} className="hover:bg-surface-muted/40">
                   <td className="px-4 py-2 font-medium text-ink">{c.name}</td>
+                  <td className="px-4 py-2 text-ink-muted">{c.cultureTypeCode}</td>
                   <td className="px-4 py-2 font-mono tabular-nums text-ink-muted">{c.maximumScore}</td>
                   <td className="px-4 py-2 text-right">
                     <Link
