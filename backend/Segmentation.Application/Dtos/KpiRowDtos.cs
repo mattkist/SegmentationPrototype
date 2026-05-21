@@ -30,7 +30,8 @@ public sealed record TechnologiesKpiRowDto(
     string CultureTypeCode,
     bool HasLargeBaseRidgeWithMulch,
     bool HasBroadGrateFurnace,
-    bool HasTechnologyPackageAdherence);
+    bool HasTechnologyPackageAdherence,
+    bool HasStandardBarn);
 
 public sealed record EsgKpiRowDto(
     string FarmerCode,

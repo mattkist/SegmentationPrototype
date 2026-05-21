@@ -137,7 +137,7 @@ export function NullableIntInput({
   )
 }
 
-/** Decimal (relevance, etc.): allows "-" and "." while typing. */
+/** Decimal input; optional fixed decimal places on blur/display. */
 export function DecimalInput({
   label,
   value,
@@ -145,28 +145,36 @@ export function DecimalInput({
   className,
   inputClassName,
   disabled,
+  decimalPlaces,
 }: BaseProps & {
   value: number
   onChange: (v: number) => void
+  /** When set, display and commit values rounded to this many decimal places. */
+  decimalPlaces?: number
 }) {
-  const [text, setText] = useState(() => formatDecimal(value))
+  const format = (n: number) =>
+    decimalPlaces !== undefined ? formatFixedDecimal(n, decimalPlaces) : formatDecimal(n)
+
+  const [text, setText] = useState(() => format(value))
   useEffect(() => {
-    setText(formatDecimal(value))
-  }, [value])
+    setText(format(value))
+  }, [value, decimalPlaces])
 
   const flush = () => {
     const t = text.trim().replace(',', '.')
     if (t === '' || t === '-' || t === '.' || t === '-.') {
-      setText(formatDecimal(value))
+      setText(format(value))
       return
     }
     const n = Number.parseFloat(t)
     if (!Number.isFinite(n)) {
-      setText(formatDecimal(value))
+      setText(format(value))
       return
     }
-    onChange(n)
-    setText(formatDecimal(n))
+    const committed =
+      decimalPlaces !== undefined ? roundToDecimalPlaces(n, decimalPlaces) : n
+    onChange(committed)
+    setText(format(committed))
   }
 
   return (
@@ -203,6 +211,16 @@ function formatDecimal(n: number): string {
   return s
 }
 
+function formatFixedDecimal(n: number, places: number): string {
+  if (!Number.isFinite(n)) return (0).toFixed(places)
+  return roundToDecimalPlaces(n, places).toFixed(places)
+}
+
+function roundToDecimalPlaces(n: number, places: number): number {
+  const p = 10 ** places
+  return Math.round(n * p) / p
+}
+
 /**
  * Edits relevance as **percent** (e.g. 50 for 50%) while the parent keeps a **fraction** (0.5).
  */
@@ -213,31 +231,34 @@ export function FractionAsPercentInput({
   className,
   inputClassName,
   disabled,
-  /** When false, parent is only notified on blur (avoids heavy rescale on every keystroke). */
-  notifyParentWhileTyping = true,
+  /** When false, parent is only notified on blur (manual relevance before Recalculate Points). */
+  notifyParentWhileTyping = false,
+  decimalPlaces = 2,
 }: BaseProps & {
   valueFraction: number
   onChangeFraction: (fraction: number) => void
   notifyParentWhileTyping?: boolean
+  decimalPlaces?: number
 }) {
-  const [text, setText] = useState(() => formatPercentText(valueFraction))
+  const [text, setText] = useState(() => formatPercentText(valueFraction, decimalPlaces))
   useEffect(() => {
-    setText(formatPercentText(valueFraction))
-  }, [valueFraction])
+    setText(formatPercentText(valueFraction, decimalPlaces))
+  }, [valueFraction, decimalPlaces])
 
   const flush = () => {
     const t = text.trim().replace(',', '.')
     if (t === '' || t === '-' || t === '.' || t === '-.') {
-      setText(formatPercentText(valueFraction))
+      setText(formatPercentText(valueFraction, decimalPlaces))
       return
     }
     const pct = Number.parseFloat(t)
     if (!Number.isFinite(pct)) {
-      setText(formatPercentText(valueFraction))
+      setText(formatPercentText(valueFraction, decimalPlaces))
       return
     }
-    onChangeFraction(pct / 100)
-    setText(formatPercentText(pct / 100))
+    const fraction = roundToDecimalPlaces(pct / 100, decimalPlaces + 2)
+    onChangeFraction(fraction)
+    setText(formatPercentText(fraction, decimalPlaces))
   }
 
   return (
@@ -273,8 +294,7 @@ export function FractionAsPercentInput({
   )
 }
 
-function formatPercentText(fraction: number): string {
-  if (!Number.isFinite(fraction)) return '0'
-  const pct = fraction * 100
-  return formatDecimal(pct)
+function formatPercentText(fraction: number, decimalPlaces = 2): string {
+  if (!Number.isFinite(fraction)) return (0).toFixed(decimalPlaces)
+  return (fraction * 100).toFixed(decimalPlaces)
 }

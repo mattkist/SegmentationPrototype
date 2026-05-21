@@ -31,6 +31,7 @@ export interface OfficialSegmentationDto {
   esgScore: number
   yieldScore: number
   scaleScore: number
+  yieldAndScaleScore: number
 }
 
 export interface FarmerDetailDto {
@@ -121,27 +122,29 @@ export interface KpiImportResultDto {
 export interface SegmentationConfigurationSummaryDto {
   id: string
   name: string
-  cultureTypeCode: string
-  maximumScore: number
+  cultureTypeCodes: string[]
 }
 
 export interface SegmentationSegmentDto {
   id?: string | null
   segmentName: string
-  rangeMin: number | null
   onlyExclusiveFarmer: boolean
   bankDepositDiscount: number
   tobaccoDiscount: number
 }
 
+export interface CultureTypeSegmentThresholdDto {
+  segmentId?: string | null
+  segmentName: string
+  rangeMin: number | null
+}
+
 export interface LoyaltySeasonQuantityRangeDto {
   plantingCropSeasonAmount: number
-  cropSeasonStart: number
   minimumDeliveryAmount: number
   maximumDeliveryAmount: number
   deliveryCropSeasonAmount: number
   score: number
-  skippedCropSeasonIds: number[]
 }
 
 export interface LoyaltyHistoricalVolumeRangeDto {
@@ -164,18 +167,12 @@ export interface QualityIqsRangeDto {
   minimum: number
   maximum: number
   cropSeasonAmount: number
-  cropSeasonStart: number
   score: number
-  skippedCropSeasonIds: number[]
 }
 
 export interface SegmentationQualityWriteDto {
   relevance: number
-  ntrmCropSeasonAmount: number
-  ntrmCropSeasonStart: number
   ntrmScore: number
-  mixtureCropSeasonAmount: number
-  mixtureCropSeasonStart: number
   mixtureScore: number
   iqsRanges: QualityIqsRangeDto[]
 }
@@ -188,14 +185,11 @@ export interface FinancialSelfFundingRangeDto {
   minimum: number
   maximum: number
   cropSeasonAmount: number
-  cropSeasonStart: number
   score: number
-  skippedCropSeasonIds: number[]
 }
 
 export interface SegmentationFinancialWriteDto {
   relevance: number
-  debtCropSeason: number
   debtScore: number
   selfFundingRanges: FinancialSelfFundingRangeDto[]
 }
@@ -206,12 +200,10 @@ export interface SegmentationFinancialDetailDto extends SegmentationFinancialWri
 
 export interface SegmentationTechnologyWriteDto {
   relevance: number
-  hasLargeBaseRidgeWithMulchCropSeason: number
   hasLargeBaseRidgeWithMulchScore: number
-  hasBroadGrateFurnaceCropSeason: number
   hasBroadGrateFurnaceScore: number
-  hasTechnologyPackageAdherenceCropSeason: number
   hasTechnologyPackageAdherenceScore: number
+  hasStandardBarnScore: number
 }
 
 export interface SegmentationTechnologyDetailDto extends SegmentationTechnologyWriteDto {
@@ -220,15 +212,11 @@ export interface SegmentationTechnologyDetailDto extends SegmentationTechnologyW
 
 export interface SegmentationEsgWriteDto {
   relevance: number
-  reforestationCropSeason: number
   reforestationScorePerPercentualPoint: number
   reforestationMaximumScore: number
-  nativeForestCropSeason: number
   nativeForestScorePerPercentualPoint: number
   nativeForestMaximumScore: number
-  minorIrregularityCropSeason: number
   minorIrregularityScore: number
-  majorIrregularityCropSeason: number
   majorIrregularityScore: number
 }
 
@@ -240,9 +228,7 @@ export interface YieldRangeDto {
   minimum: number
   maximum: number
   cropSeasonAmount: number
-  cropSeasonStart: number
   score: number
-  skippedCropSeasonIds: number[]
 }
 
 export interface SegmentationYieldWriteDto {
@@ -258,9 +244,7 @@ export interface ScaleRangeDto {
   minimum: number
   maximum: number
   cropSeasonAmount: number
-  cropSeasonStart: number
   score: number
-  skippedCropSeasonIds: number[]
 }
 
 export interface SegmentationScaleWriteDto {
@@ -272,12 +256,29 @@ export interface SegmentationScaleDetailDto extends SegmentationScaleWriteDto {
   maxScore: number
 }
 
-export interface SegmentationConfigurationDetailDto {
-  id: string
-  name: string
+export interface YieldAndScaleRangeDto {
+  yieldAndScaleCropSeasonAmount: number
+  minimumYield: number
+  maximumYield: number
+  minimumModule: number
+  maximumModule: number
+  score: number
+}
+
+export interface SegmentationYieldAndScaleWriteDto {
+  relevance: number
+  ranges: YieldAndScaleRangeDto[]
+}
+
+export interface SegmentationYieldAndScaleDetailDto extends SegmentationYieldAndScaleWriteDto {
+  maxScore: number
+}
+
+export interface CultureTypeConfigurationDetailDto {
+  id?: string | null
   cultureTypeCode: string
   maximumScore: number
-  segments: SegmentationSegmentDto[]
+  segmentThresholds: CultureTypeSegmentThresholdDto[]
   loyalty: SegmentationLoyaltyDetailDto
   quality: SegmentationQualityDetailDto
   financial: SegmentationFinancialDetailDto
@@ -285,13 +286,21 @@ export interface SegmentationConfigurationDetailDto {
   esg: SegmentationEsgDetailDto
   yield: SegmentationYieldDetailDto
   scale: SegmentationScaleDetailDto
+  yieldAndScale: SegmentationYieldAndScaleDetailDto
 }
 
-export interface SaveSegmentationConfigurationDto {
+export interface SegmentationConfigurationDetailDto {
+  id: string
   name: string
+  segments: SegmentationSegmentDto[]
+  cultureTypes: CultureTypeConfigurationDetailDto[]
+}
+
+export interface CultureTypeConfigurationWriteDto {
+  id?: string | null
   cultureTypeCode: string
   maximumScore: number
-  segments: SegmentationSegmentDto[]
+  segmentThresholds: CultureTypeSegmentThresholdDto[]
   loyalty: SegmentationLoyaltyWriteDto
   quality: SegmentationQualityWriteDto
   financial: SegmentationFinancialWriteDto
@@ -299,11 +308,19 @@ export interface SaveSegmentationConfigurationDto {
   esg: SegmentationEsgWriteDto
   yield: SegmentationYieldWriteDto
   scale: SegmentationScaleWriteDto
+  yieldAndScale: SegmentationYieldAndScaleWriteDto
+}
+
+export interface SaveSegmentationConfigurationDto {
+  name: string
+  segments: SegmentationSegmentDto[]
+  cultureTypes: CultureTypeConfigurationWriteDto[]
 }
 
 export interface CreateSegmentationSimulationDto {
   segmentationConfigurationId: string
   cropSeasonId: number
+  scopeCropSeasonIds: number[]
 }
 
 export interface SegmentationSimulationSummaryDto {
@@ -312,6 +329,7 @@ export interface SegmentationSimulationSummaryDto {
   configurationName: string
   cropSeasonId: number
   cropSeasonCode: string
+  scopeCropSeasonIds: number[]
   simulationDate: string
   status: string
   farmerCount: number
@@ -321,6 +339,7 @@ export interface SegmentationSimulationFarmerDto {
   farmerId: string
   farmerCode: string
   farmerName: string
+  cultureTypeCode: string
   totalScore: number
   loyaltyScore: number
   qualityScore: number
@@ -329,10 +348,10 @@ export interface SegmentationSimulationFarmerDto {
   esgScore: number
   yieldScore: number
   scaleScore: number
+  yieldAndScaleScore: number
   nonExclusiveFarmer: boolean
   segmentationConfigurationSegmentId: string | null
   segmentName: string | null
-  rank: number
 }
 
 export interface SegmentationSimulationDetailDto {
@@ -341,6 +360,7 @@ export interface SegmentationSimulationDetailDto {
   configurationName: string
   cropSeasonId: number
   cropSeasonCode: string
+  scopeCropSeasonIds: number[]
   simulationDate: string
   status: string
   farmers: SegmentationSimulationFarmerDto[]

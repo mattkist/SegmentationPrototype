@@ -26,11 +26,15 @@ public class SegmentationSimulationFarmer
 
     public int ScaleScore { get; set; }
 
+    public int YieldAndScaleScore { get; set; }
+
     public bool NonExclusiveFarmer { get; set; }
+
+    public required string CultureTypeCode { get; set; }
 
     public Guid? SegmentationConfigurationSegmentId { get; set; }
     public SegmentationSegment? Segment { get; set; }
 
-    /// <summary>Competition ranking (1 + count of strictly higher total scores).</summary>
+    /// <summary>Legacy column; rankings are no longer computed (always 0).</summary>
     public int Rank { get; set; }
 }

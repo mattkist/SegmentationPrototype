@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Segmentation.Infrastructure.Persistence.Migrations
+namespace Segmentation.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -15,13 +15,24 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 name: "CropSeasons",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<int>(type: "INTEGER", nullable: false),
                     Code = table.Column<string>(type: "TEXT", maxLength: 16, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CropSeasons", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CultureTypes",
+                columns: table => new
+                {
+                    Code = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CultureTypes", x => x.Code);
                 });
 
             migrationBuilder.CreateTable(
@@ -56,8 +67,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    MaximumScore = table.Column<int>(type: "INTEGER", nullable: false)
+                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -71,6 +81,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     FarmerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     ReforestationPercentage = table.Column<int>(type: "INTEGER", nullable: false),
                     NativeForestPercentage = table.Column<int>(type: "INTEGER", nullable: false),
                     HasMinorIrregularity = table.Column<bool>(type: "INTEGER", nullable: false),
@@ -84,6 +95,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         column: x => x.CropSeasonId,
                         principalTable: "CropSeasons",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_EsgKpis_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_EsgKpis_Farmers_FarmerId",
@@ -124,6 +141,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     FarmerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     SelfFundingPercentage = table.Column<int>(type: "INTEGER", nullable: false),
                     HaveDebt = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
@@ -135,6 +153,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         column: x => x.CropSeasonId,
                         principalTable: "CropSeasons",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_FinancialKpis_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_FinancialKpis_Farmers_FarmerId",
@@ -151,6 +175,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     FarmerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     DeliveredPercentage = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -161,6 +186,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         column: x => x.CropSeasonId,
                         principalTable: "CropSeasons",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_LoyaltyKpis_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_LoyaltyKpis_Farmers_FarmerId",
@@ -177,6 +208,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     FarmerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     Iqs = table.Column<int>(type: "INTEGER", nullable: false),
                     HadNtrm = table.Column<bool>(type: "INTEGER", nullable: false),
                     HadQualityMixture = table.Column<bool>(type: "INTEGER", nullable: false)
@@ -189,6 +221,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         column: x => x.CropSeasonId,
                         principalTable: "CropSeasons",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_QualityKpis_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_QualityKpis_Farmers_FarmerId",
@@ -205,6 +243,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     FarmerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     Scale = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -215,6 +254,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         column: x => x.CropSeasonId,
                         principalTable: "CropSeasons",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ScaleKpis_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_ScaleKpis_Farmers_FarmerId",
@@ -231,6 +276,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     FarmerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     HasLargeBaseRidgeWithMulch = table.Column<bool>(type: "INTEGER", nullable: false),
                     HasBroadGrateFurnace = table.Column<bool>(type: "INTEGER", nullable: false),
                     HasTechnologyPackageAdherence = table.Column<bool>(type: "INTEGER", nullable: false)
@@ -243,6 +289,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         column: x => x.CropSeasonId,
                         principalTable: "CropSeasons",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TechnologiesKpis_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_TechnologiesKpis_Farmers_FarmerId",
@@ -259,6 +311,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     FarmerId = table.Column<Guid>(type: "TEXT", nullable: false),
                     CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     Yield = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -271,6 +324,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
+                        name: "FK_YieldKpis_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
                         name: "FK_YieldKpis_Farmers_FarmerId",
                         column: x => x.FarmerId,
                         principalTable: "Farmers",
@@ -279,156 +338,25 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SegmentationConfigurationEsgs",
+                name: "SegmentationConfigurationCultureTypes",
                 columns: table => new
                 {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
-                    ReforestationCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    ReforestationScorePerPercentualPoint = table.Column<int>(type: "INTEGER", nullable: false),
-                    ReforestationMaximumScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    NativeForestCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    NativeForestScorePerPercentualPoint = table.Column<int>(type: "INTEGER", nullable: false),
-                    NativeForestMaximumScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    MinorIrregularityCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    MinorIrregularityScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    MajorIrregularityCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    MajorIrregularityScore = table.Column<int>(type: "INTEGER", nullable: false)
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
+                    MaximumScore = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SegmentationConfigurationEsgs", x => x.SegmentationConfigurationId);
+                    table.PrimaryKey("PK_SegmentationConfigurationCultureTypes", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_SegmentationConfigurationEsgs_SegmentationConfigurations_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SegmentationConfigurationFinancials",
-                columns: table => new
-                {
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
-                    DebtCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    DebtScore = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SegmentationConfigurationFinancials", x => x.SegmentationConfigurationId);
+                        name: "FK_SegmentationConfigurationCultureTypes_CultureTypes_CultureTypeCode",
+                        column: x => x.CultureTypeCode,
+                        principalTable: "CultureTypes",
+                        principalColumn: "Code",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_SegmentationConfigurationFinancials_SegmentationConfigurations_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SegmentationConfigurationLoyalties",
-                columns: table => new
-                {
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SegmentationConfigurationLoyalties", x => x.SegmentationConfigurationId);
-                    table.ForeignKey(
-                        name: "FK_SegmentationConfigurationLoyalties_SegmentationConfigurations_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SegmentationConfigurationQualities",
-                columns: table => new
-                {
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
-                    NtrmCropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    NtrmCropSeasonStart = table.Column<int>(type: "INTEGER", nullable: false),
-                    NtrmScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    MixtureCropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    MixtureCropSeasonStart = table.Column<int>(type: "INTEGER", nullable: false),
-                    MixtureScore = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SegmentationConfigurationQualities", x => x.SegmentationConfigurationId);
-                    table.ForeignKey(
-                        name: "FK_SegmentationConfigurationQualities_SegmentationConfigurations_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SegmentationConfigurationScales",
-                columns: table => new
-                {
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SegmentationConfigurationScales", x => x.SegmentationConfigurationId);
-                    table.ForeignKey(
-                        name: "FK_SegmentationConfigurationScales_SegmentationConfigurations_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SegmentationConfigurationTechnologies",
-                columns: table => new
-                {
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
-                    HasLargeBaseRidgeWithMulchCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    HasLargeBaseRidgeWithMulchScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    HasBroadGrateFurnaceCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    HasBroadGrateFurnaceScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    HasTechnologyPackageAdherenceCropSeason = table.Column<int>(type: "INTEGER", nullable: false),
-                    HasTechnologyPackageAdherenceScore = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SegmentationConfigurationTechnologies", x => x.SegmentationConfigurationId);
-                    table.ForeignKey(
-                        name: "FK_SegmentationConfigurationTechnologies_SegmentationConfigurations_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurations",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SegmentationConfigurationYields",
-                columns: table => new
-                {
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
-                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SegmentationConfigurationYields", x => x.SegmentationConfigurationId);
-                    table.ForeignKey(
-                        name: "FK_SegmentationConfigurationYields_SegmentationConfigurations_SegmentationConfigurationId",
+                        name: "FK_SegmentationConfigurationCultureTypes_SegmentationConfigurations_SegmentationConfigurationId",
                         column: x => x.SegmentationConfigurationId,
                         principalTable: "SegmentationConfigurations",
                         principalColumn: "Id",
@@ -442,7 +370,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SegmentName = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
-                    RangeMin = table.Column<int>(type: "INTEGER", nullable: true),
                     OnlyExclusiveFarmer = table.Column<bool>(type: "INTEGER", nullable: false),
                     BankDepositDiscount = table.Column<int>(type: "INTEGER", nullable: false),
                     TobaccoDiscount = table.Column<int>(type: "INTEGER", nullable: false)
@@ -486,139 +413,147 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FinancialSelfFundingRanges",
+                name: "SegmentationConfigurationEsgs",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
-                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonStart = table.Column<int>(type: "INTEGER", nullable: false),
-                    Score = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
+                    ReforestationScorePerPercentualPoint = table.Column<int>(type: "INTEGER", nullable: false),
+                    ReforestationMaximumScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    NativeForestScorePerPercentualPoint = table.Column<int>(type: "INTEGER", nullable: false),
+                    NativeForestMaximumScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    MinorIrregularityScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    MajorIrregularityScore = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_FinancialSelfFundingRanges", x => x.Id);
+                    table.PrimaryKey("PK_SegmentationConfigurationEsgs", x => x.SegmentationConfigurationCultureTypeId);
                     table.ForeignKey(
-                        name: "FK_FinancialSelfFundingRanges_SegmentationConfigurationFinancials_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurationFinancials",
-                        principalColumn: "SegmentationConfigurationId",
+                        name: "FK_SegmentationConfigurationEsgs_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "LoyaltyHistoricalVolumeRanges",
+                name: "SegmentationConfigurationFinancials",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    MinimumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    MaximumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    Score = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
+                    DebtScore = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LoyaltyHistoricalVolumeRanges", x => x.Id);
+                    table.PrimaryKey("PK_SegmentationConfigurationFinancials", x => x.SegmentationConfigurationCultureTypeId);
                     table.ForeignKey(
-                        name: "FK_LoyaltyHistoricalVolumeRanges_SegmentationConfigurationLoyalties_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurationLoyalties",
-                        principalColumn: "SegmentationConfigurationId",
+                        name: "FK_SegmentationConfigurationFinancials_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "LoyaltySeasonQuantityRanges",
+                name: "SegmentationConfigurationLoyalties",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    PlantingCropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonStart = table.Column<int>(type: "INTEGER", nullable: false),
-                    MinimumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    MaximumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    DeliveryCropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    Score = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LoyaltySeasonQuantityRanges", x => x.Id);
+                    table.PrimaryKey("PK_SegmentationConfigurationLoyalties", x => x.SegmentationConfigurationCultureTypeId);
                     table.ForeignKey(
-                        name: "FK_LoyaltySeasonQuantityRanges_SegmentationConfigurationLoyalties_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurationLoyalties",
-                        principalColumn: "SegmentationConfigurationId",
+                        name: "FK_SegmentationConfigurationLoyalties_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "QualityIqsRanges",
+                name: "SegmentationConfigurationQualities",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
-                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonStart = table.Column<int>(type: "INTEGER", nullable: false),
-                    Score = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
+                    NtrmScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    MixtureScore = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_QualityIqsRanges", x => x.Id);
+                    table.PrimaryKey("PK_SegmentationConfigurationQualities", x => x.SegmentationConfigurationCultureTypeId);
                     table.ForeignKey(
-                        name: "FK_QualityIqsRanges_SegmentationConfigurationQualities_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurationQualities",
-                        principalColumn: "SegmentationConfigurationId",
+                        name: "FK_SegmentationConfigurationQualities_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ScaleRanges",
+                name: "SegmentationConfigurationScales",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
-                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonStart = table.Column<int>(type: "INTEGER", nullable: false),
-                    Score = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ScaleRanges", x => x.Id);
+                    table.PrimaryKey("PK_SegmentationConfigurationScales", x => x.SegmentationConfigurationCultureTypeId);
                     table.ForeignKey(
-                        name: "FK_ScaleRanges_SegmentationConfigurationScales_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurationScales",
-                        principalColumn: "SegmentationConfigurationId",
+                        name: "FK_SegmentationConfigurationScales_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "YieldRanges",
+                name: "SegmentationConfigurationTechnologies",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    SegmentationConfigurationId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
-                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
-                    CropSeasonStart = table.Column<int>(type: "INTEGER", nullable: false),
-                    Score = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false),
+                    HasLargeBaseRidgeWithMulchScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    HasBroadGrateFurnaceScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    HasTechnologyPackageAdherenceScore = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_YieldRanges", x => x.Id);
+                    table.PrimaryKey("PK_SegmentationConfigurationTechnologies", x => x.SegmentationConfigurationCultureTypeId);
                     table.ForeignKey(
-                        name: "FK_YieldRanges_SegmentationConfigurationYields_SegmentationConfigurationId",
-                        column: x => x.SegmentationConfigurationId,
-                        principalTable: "SegmentationConfigurationYields",
-                        principalColumn: "SegmentationConfigurationId",
+                        name: "FK_SegmentationConfigurationTechnologies_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SegmentationConfigurationYields",
+                columns: table => new
+                {
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MaxScore = table.Column<int>(type: "INTEGER", nullable: false),
+                    Relevance = table.Column<decimal>(type: "TEXT", precision: 9, scale: 4, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SegmentationConfigurationYields", x => x.SegmentationConfigurationCultureTypeId);
+                    table.ForeignKey(
+                        name: "FK_SegmentationConfigurationYields_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -665,6 +600,57 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SegmentationConfigurationCultureTypeSegments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SegmentationSegmentId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    RangeMin = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SegmentationConfigurationCultureTypeSegments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SegmentationConfigurationCultureTypeSegments_SegmentationConfigurationCultureTypes_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationCultureTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_SegmentationConfigurationCultureTypeSegments_SegmentationSegments_SegmentationSegmentId",
+                        column: x => x.SegmentationSegmentId,
+                        principalTable: "SegmentationSegments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SegmentationSimulationCropSeasons",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SegmentationSimulationId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SegmentationSimulationCropSeasons", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SegmentationSimulationCropSeasons_CropSeasons_CropSeasonId",
+                        column: x => x.CropSeasonId,
+                        principalTable: "CropSeasons",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_SegmentationSimulationCropSeasons_SegmentationSimulations_SegmentationSimulationId",
+                        column: x => x.SegmentationSimulationId,
+                        principalTable: "SegmentationSimulations",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SegmentationSimulationFarmers",
                 columns: table => new
                 {
@@ -680,6 +666,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     YieldScore = table.Column<int>(type: "INTEGER", nullable: false),
                     ScaleScore = table.Column<int>(type: "INTEGER", nullable: false),
                     NonExclusiveFarmer = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CultureTypeCode = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
                     SegmentationConfigurationSegmentId = table.Column<Guid>(type: "TEXT", nullable: true),
                     Rank = table.Column<int>(type: "INTEGER", nullable: false)
                 },
@@ -707,127 +694,134 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "FinancialSelfFundingRangeSkippedCropSeasons",
+                name: "FinancialSelfFundingRanges",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    FinancialSelfFundingRangeId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
+                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
+                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    Score = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_FinancialSelfFundingRangeSkippedCropSeasons", x => x.Id);
+                    table.PrimaryKey("PK_FinancialSelfFundingRanges", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_FinancialSelfFundingRangeSkippedCropSeasons_CropSeasons_CropSeasonId",
-                        column: x => x.CropSeasonId,
-                        principalTable: "CropSeasons",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_FinancialSelfFundingRangeSkippedCropSeasons_FinancialSelfFundingRanges_FinancialSelfFundingRangeId",
-                        column: x => x.FinancialSelfFundingRangeId,
-                        principalTable: "FinancialSelfFundingRanges",
-                        principalColumn: "Id",
+                        name: "FK_FinancialSelfFundingRanges_SegmentationConfigurationFinancials_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationFinancials",
+                        principalColumn: "SegmentationConfigurationCultureTypeId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "LoyaltySeasonQuantityRangeSkippedCropSeasons",
+                name: "LoyaltyHistoricalVolumeRanges",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    LoyaltySeasonQuantityRangeId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MinimumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    MaximumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    Score = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LoyaltySeasonQuantityRangeSkippedCropSeasons", x => x.Id);
+                    table.PrimaryKey("PK_LoyaltyHistoricalVolumeRanges", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LoyaltySeasonQuantityRangeSkippedCropSeasons_CropSeasons_CropSeasonId",
-                        column: x => x.CropSeasonId,
-                        principalTable: "CropSeasons",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_LoyaltySeasonQuantityRangeSkippedCropSeasons_LoyaltySeasonQuantityRanges_LoyaltySeasonQuantityRangeId",
-                        column: x => x.LoyaltySeasonQuantityRangeId,
-                        principalTable: "LoyaltySeasonQuantityRanges",
-                        principalColumn: "Id",
+                        name: "FK_LoyaltyHistoricalVolumeRanges_SegmentationConfigurationLoyalties_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationLoyalties",
+                        principalColumn: "SegmentationConfigurationCultureTypeId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "QualityIqsRangeSkippedCropSeasons",
+                name: "LoyaltySeasonQuantityRanges",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    QualityIqsRangeId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    PlantingCropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    MinimumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    MaximumDeliveryAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    DeliveryCropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    Score = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_QualityIqsRangeSkippedCropSeasons", x => x.Id);
+                    table.PrimaryKey("PK_LoyaltySeasonQuantityRanges", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_QualityIqsRangeSkippedCropSeasons_CropSeasons_CropSeasonId",
-                        column: x => x.CropSeasonId,
-                        principalTable: "CropSeasons",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_QualityIqsRangeSkippedCropSeasons_QualityIqsRanges_QualityIqsRangeId",
-                        column: x => x.QualityIqsRangeId,
-                        principalTable: "QualityIqsRanges",
-                        principalColumn: "Id",
+                        name: "FK_LoyaltySeasonQuantityRanges_SegmentationConfigurationLoyalties_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationLoyalties",
+                        principalColumn: "SegmentationConfigurationCultureTypeId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ScaleRangeSkippedCropSeasons",
+                name: "QualityIqsRanges",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    ScaleRangeId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
+                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
+                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    Score = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ScaleRangeSkippedCropSeasons", x => x.Id);
+                    table.PrimaryKey("PK_QualityIqsRanges", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ScaleRangeSkippedCropSeasons_CropSeasons_CropSeasonId",
-                        column: x => x.CropSeasonId,
-                        principalTable: "CropSeasons",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ScaleRangeSkippedCropSeasons_ScaleRanges_ScaleRangeId",
-                        column: x => x.ScaleRangeId,
-                        principalTable: "ScaleRanges",
-                        principalColumn: "Id",
+                        name: "FK_QualityIqsRanges_SegmentationConfigurationQualities_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationQualities",
+                        principalColumn: "SegmentationConfigurationCultureTypeId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "YieldRangeSkippedCropSeasons",
+                name: "ScaleRanges",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    YieldRangeId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    CropSeasonId = table.Column<int>(type: "INTEGER", nullable: false)
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
+                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
+                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    Score = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_YieldRangeSkippedCropSeasons", x => x.Id);
+                    table.PrimaryKey("PK_ScaleRanges", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_YieldRangeSkippedCropSeasons_CropSeasons_CropSeasonId",
-                        column: x => x.CropSeasonId,
-                        principalTable: "CropSeasons",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        name: "FK_ScaleRanges_SegmentationConfigurationScales_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationScales",
+                        principalColumn: "SegmentationConfigurationCultureTypeId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "YieldRanges",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    SegmentationConfigurationCultureTypeId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Minimum = table.Column<int>(type: "INTEGER", nullable: false),
+                    Maximum = table.Column<int>(type: "INTEGER", nullable: false),
+                    CropSeasonAmount = table.Column<int>(type: "INTEGER", nullable: false),
+                    Score = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_YieldRanges", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_YieldRangeSkippedCropSeasons_YieldRanges_YieldRangeId",
-                        column: x => x.YieldRangeId,
-                        principalTable: "YieldRanges",
-                        principalColumn: "Id",
+                        name: "FK_YieldRanges_SegmentationConfigurationYields_SegmentationConfigurationCultureTypeId",
+                        column: x => x.SegmentationConfigurationCultureTypeId,
+                        principalTable: "SegmentationConfigurationYields",
+                        principalColumn: "SegmentationConfigurationCultureTypeId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -837,9 +831,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 column: "CropSeasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EsgKpis_FarmerId_CropSeasonId",
+                name: "IX_EsgKpis_CultureTypeCode",
                 table: "EsgKpis",
-                columns: new[] { "FarmerId", "CropSeasonId" },
+                column: "CultureTypeCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_EsgKpis_FarmerId_CropSeasonId_CultureTypeCode",
+                table: "EsgKpis",
+                columns: new[] { "FarmerId", "CropSeasonId", "CultureTypeCode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -881,30 +880,25 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 column: "CropSeasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FinancialKpis_FarmerId_CropSeasonId",
+                name: "IX_FinancialKpis_CultureTypeCode",
                 table: "FinancialKpis",
-                columns: new[] { "FarmerId", "CropSeasonId" },
+                column: "CultureTypeCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FinancialKpis_FarmerId_CropSeasonId_CultureTypeCode",
+                table: "FinancialKpis",
+                columns: new[] { "FarmerId", "CropSeasonId", "CultureTypeCode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_FinancialSelfFundingRanges_SegmentationConfigurationId",
+                name: "IX_FinancialSelfFundingRanges_SegmentationConfigurationCultureTypeId",
                 table: "FinancialSelfFundingRanges",
-                column: "SegmentationConfigurationId");
+                column: "SegmentationConfigurationCultureTypeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_FinancialSelfFundingRangeSkippedCropSeasons_CropSeasonId",
-                table: "FinancialSelfFundingRangeSkippedCropSeasons",
-                column: "CropSeasonId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_FinancialSelfFundingRangeSkippedCropSeasons_FinancialSelfFundingRangeId",
-                table: "FinancialSelfFundingRangeSkippedCropSeasons",
-                column: "FinancialSelfFundingRangeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_LoyaltyHistoricalVolumeRanges_SegmentationConfigurationId",
+                name: "IX_LoyaltyHistoricalVolumeRanges_SegmentationConfigurationCultureTypeId",
                 table: "LoyaltyHistoricalVolumeRanges",
-                column: "SegmentationConfigurationId");
+                column: "SegmentationConfigurationCultureTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_LoyaltyKpis_CropSeasonId",
@@ -912,40 +906,25 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 column: "CropSeasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LoyaltyKpis_FarmerId_CropSeasonId",
+                name: "IX_LoyaltyKpis_CultureTypeCode",
                 table: "LoyaltyKpis",
-                columns: new[] { "FarmerId", "CropSeasonId" },
+                column: "CultureTypeCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LoyaltyKpis_FarmerId_CropSeasonId_CultureTypeCode",
+                table: "LoyaltyKpis",
+                columns: new[] { "FarmerId", "CropSeasonId", "CultureTypeCode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_LoyaltySeasonQuantityRanges_SegmentationConfigurationId",
+                name: "IX_LoyaltySeasonQuantityRanges_SegmentationConfigurationCultureTypeId",
                 table: "LoyaltySeasonQuantityRanges",
-                column: "SegmentationConfigurationId");
+                column: "SegmentationConfigurationCultureTypeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_LoyaltySeasonQuantityRangeSkippedCropSeasons_CropSeasonId",
-                table: "LoyaltySeasonQuantityRangeSkippedCropSeasons",
-                column: "CropSeasonId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_LoyaltySeasonQuantityRangeSkippedCropSeasons_LoyaltySeasonQuantityRangeId",
-                table: "LoyaltySeasonQuantityRangeSkippedCropSeasons",
-                column: "LoyaltySeasonQuantityRangeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_QualityIqsRanges_SegmentationConfigurationId",
+                name: "IX_QualityIqsRanges_SegmentationConfigurationCultureTypeId",
                 table: "QualityIqsRanges",
-                column: "SegmentationConfigurationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_QualityIqsRangeSkippedCropSeasons_CropSeasonId",
-                table: "QualityIqsRangeSkippedCropSeasons",
-                column: "CropSeasonId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_QualityIqsRangeSkippedCropSeasons_QualityIqsRangeId",
-                table: "QualityIqsRangeSkippedCropSeasons",
-                column: "QualityIqsRangeId");
+                column: "SegmentationConfigurationCultureTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_QualityKpis_CropSeasonId",
@@ -953,9 +932,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 column: "CropSeasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_QualityKpis_FarmerId_CropSeasonId",
+                name: "IX_QualityKpis_CultureTypeCode",
                 table: "QualityKpis",
-                columns: new[] { "FarmerId", "CropSeasonId" },
+                column: "CultureTypeCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QualityKpis_FarmerId_CropSeasonId_CultureTypeCode",
+                table: "QualityKpis",
+                columns: new[] { "FarmerId", "CropSeasonId", "CultureTypeCode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -964,30 +948,58 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 column: "CropSeasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScaleKpis_FarmerId_CropSeasonId",
+                name: "IX_ScaleKpis_CultureTypeCode",
                 table: "ScaleKpis",
-                columns: new[] { "FarmerId", "CropSeasonId" },
+                column: "CultureTypeCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ScaleKpis_FarmerId_CropSeasonId_CultureTypeCode",
+                table: "ScaleKpis",
+                columns: new[] { "FarmerId", "CropSeasonId", "CultureTypeCode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScaleRanges_SegmentationConfigurationId",
+                name: "IX_ScaleRanges_SegmentationConfigurationCultureTypeId",
                 table: "ScaleRanges",
-                column: "SegmentationConfigurationId");
+                column: "SegmentationConfigurationCultureTypeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScaleRangeSkippedCropSeasons_CropSeasonId",
-                table: "ScaleRangeSkippedCropSeasons",
-                column: "CropSeasonId");
+                name: "IX_SegmentationConfigurationCultureTypes_CultureTypeCode",
+                table: "SegmentationConfigurationCultureTypes",
+                column: "CultureTypeCode");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScaleRangeSkippedCropSeasons_ScaleRangeId",
-                table: "ScaleRangeSkippedCropSeasons",
-                column: "ScaleRangeId");
+                name: "IX_SegmentationConfigurationCultureTypes_SegmentationConfigurationId_CultureTypeCode",
+                table: "SegmentationConfigurationCultureTypes",
+                columns: new[] { "SegmentationConfigurationId", "CultureTypeCode" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SegmentationConfigurationCultureTypeSegments_SegmentationConfigurationCultureTypeId_SegmentationSegmentId",
+                table: "SegmentationConfigurationCultureTypeSegments",
+                columns: new[] { "SegmentationConfigurationCultureTypeId", "SegmentationSegmentId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SegmentationConfigurationCultureTypeSegments_SegmentationSegmentId",
+                table: "SegmentationConfigurationCultureTypeSegments",
+                column: "SegmentationSegmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SegmentationSegments_SegmentationConfigurationId",
                 table: "SegmentationSegments",
                 column: "SegmentationConfigurationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SegmentationSimulationCropSeasons_CropSeasonId",
+                table: "SegmentationSimulationCropSeasons",
+                column: "CropSeasonId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SegmentationSimulationCropSeasons_SegmentationSimulationId_CropSeasonId",
+                table: "SegmentationSimulationCropSeasons",
+                columns: new[] { "SegmentationSimulationId", "CropSeasonId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SegmentationSimulationFarmers_FarmerId",
@@ -1021,9 +1033,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 column: "CropSeasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_TechnologiesKpis_FarmerId_CropSeasonId",
+                name: "IX_TechnologiesKpis_CultureTypeCode",
                 table: "TechnologiesKpis",
-                columns: new[] { "FarmerId", "CropSeasonId" },
+                column: "CultureTypeCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TechnologiesKpis_FarmerId_CropSeasonId_CultureTypeCode",
+                table: "TechnologiesKpis",
+                columns: new[] { "FarmerId", "CropSeasonId", "CultureTypeCode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1032,25 +1049,20 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 column: "CropSeasonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_YieldKpis_FarmerId_CropSeasonId",
+                name: "IX_YieldKpis_CultureTypeCode",
                 table: "YieldKpis",
-                columns: new[] { "FarmerId", "CropSeasonId" },
+                column: "CultureTypeCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_YieldKpis_FarmerId_CropSeasonId_CultureTypeCode",
+                table: "YieldKpis",
+                columns: new[] { "FarmerId", "CropSeasonId", "CultureTypeCode" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_YieldRanges_SegmentationConfigurationId",
+                name: "IX_YieldRanges_SegmentationConfigurationCultureTypeId",
                 table: "YieldRanges",
-                column: "SegmentationConfigurationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_YieldRangeSkippedCropSeasons_CropSeasonId",
-                table: "YieldRangeSkippedCropSeasons",
-                column: "CropSeasonId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_YieldRangeSkippedCropSeasons_YieldRangeId",
-                table: "YieldRangeSkippedCropSeasons",
-                column: "YieldRangeId");
+                column: "SegmentationConfigurationCultureTypeId");
         }
 
         /// <inheritdoc />
@@ -1069,7 +1081,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 name: "FinancialKpis");
 
             migrationBuilder.DropTable(
-                name: "FinancialSelfFundingRangeSkippedCropSeasons");
+                name: "FinancialSelfFundingRanges");
 
             migrationBuilder.DropTable(
                 name: "LoyaltyHistoricalVolumeRanges");
@@ -1078,10 +1090,10 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 name: "LoyaltyKpis");
 
             migrationBuilder.DropTable(
-                name: "LoyaltySeasonQuantityRangeSkippedCropSeasons");
+                name: "LoyaltySeasonQuantityRanges");
 
             migrationBuilder.DropTable(
-                name: "QualityIqsRangeSkippedCropSeasons");
+                name: "QualityIqsRanges");
 
             migrationBuilder.DropTable(
                 name: "QualityKpis");
@@ -1090,13 +1102,19 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 name: "ScaleKpis");
 
             migrationBuilder.DropTable(
-                name: "ScaleRangeSkippedCropSeasons");
+                name: "ScaleRanges");
+
+            migrationBuilder.DropTable(
+                name: "SegmentationConfigurationCultureTypeSegments");
 
             migrationBuilder.DropTable(
                 name: "SegmentationConfigurationEsgs");
 
             migrationBuilder.DropTable(
                 name: "SegmentationConfigurationTechnologies");
+
+            migrationBuilder.DropTable(
+                name: "SegmentationSimulationCropSeasons");
 
             migrationBuilder.DropTable(
                 name: "SegmentationSimulationFarmers");
@@ -1108,34 +1126,10 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 name: "YieldKpis");
 
             migrationBuilder.DropTable(
-                name: "YieldRangeSkippedCropSeasons");
+                name: "YieldRanges");
 
             migrationBuilder.DropTable(
                 name: "FarmerClusters");
-
-            migrationBuilder.DropTable(
-                name: "FinancialSelfFundingRanges");
-
-            migrationBuilder.DropTable(
-                name: "LoyaltySeasonQuantityRanges");
-
-            migrationBuilder.DropTable(
-                name: "QualityIqsRanges");
-
-            migrationBuilder.DropTable(
-                name: "ScaleRanges");
-
-            migrationBuilder.DropTable(
-                name: "SegmentationSegments");
-
-            migrationBuilder.DropTable(
-                name: "SegmentationSimulations");
-
-            migrationBuilder.DropTable(
-                name: "Farmers");
-
-            migrationBuilder.DropTable(
-                name: "YieldRanges");
 
             migrationBuilder.DropTable(
                 name: "SegmentationConfigurationFinancials");
@@ -1150,10 +1144,25 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 name: "SegmentationConfigurationScales");
 
             migrationBuilder.DropTable(
-                name: "CropSeasons");
+                name: "SegmentationSegments");
+
+            migrationBuilder.DropTable(
+                name: "SegmentationSimulations");
+
+            migrationBuilder.DropTable(
+                name: "Farmers");
 
             migrationBuilder.DropTable(
                 name: "SegmentationConfigurationYields");
+
+            migrationBuilder.DropTable(
+                name: "CropSeasons");
+
+            migrationBuilder.DropTable(
+                name: "SegmentationConfigurationCultureTypes");
+
+            migrationBuilder.DropTable(
+                name: "CultureTypes");
 
             migrationBuilder.DropTable(
                 name: "SegmentationConfigurations");

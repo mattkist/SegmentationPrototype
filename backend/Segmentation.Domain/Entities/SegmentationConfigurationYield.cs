@@ -2,8 +2,8 @@ namespace Segmentation.Domain.Entities;
 
 public class SegmentationConfigurationYield
 {
-    public Guid SegmentationConfigurationId { get; set; }
-    public SegmentationConfiguration SegmentationConfiguration { get; set; } = null!;
+    public Guid SegmentationConfigurationCultureTypeId { get; set; }
+    public SegmentationConfigurationCultureType CultureType { get; set; } = null!;
 
     public int MaxScore { get; set; }
 

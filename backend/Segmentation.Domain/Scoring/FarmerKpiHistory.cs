@@ -38,7 +38,8 @@ public readonly record struct FinancialKpiSnapshot(int SelfFundingPercentage, bo
 public readonly record struct TechnologiesKpiSnapshot(
     bool HasLargeBaseRidgeWithMulch,
     bool HasBroadGrateFurnace,
-    bool HasTechnologyPackageAdherence);
+    bool HasTechnologyPackageAdherence,
+    bool HasStandardBarn);
 
 public readonly record struct EsgKpiSnapshot(
     int ReforestationPercentage,

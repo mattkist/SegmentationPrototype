@@ -104,7 +104,8 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                 seg.TechnologiesScore,
                 seg.EsgScore,
                 seg.YieldScore,
-                seg.ScaleScore);
+                seg.ScaleScore,
+                seg.YieldAndScaleScore);
 
         var loyalty = await db.LoyaltyKpis.AsNoTracking()
             .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
@@ -155,7 +156,8 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                     tech.CultureTypeCode,
                     tech.HasLargeBaseRidgeWithMulch,
                     tech.HasBroadGrateFurnace,
-                    tech.HasTechnologyPackageAdherence),
+                    tech.HasTechnologyPackageAdherence,
+                    tech.HasStandardBarn),
             esg is null
                 ? null
                 : new EsgKpiRowDto(

@@ -8,11 +8,11 @@ using Segmentation.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace Segmentation.Infrastructure.Persistence.Migrations
+namespace Segmentation.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260511181220_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260518135726_SeedCropSeason2023Data")]
+    partial class SeedCropSeason2023Data
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -23,7 +23,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Segmentation.Domain.Entities.CropSeason", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Code")
@@ -36,6 +35,22 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.ToTable("CropSeasons", (string)null);
                 });
 
+            modelBuilder.Entity("Segmentation.Domain.Entities.CultureType", b =>
+                {
+                    b.Property<string>("Code")
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Code");
+
+                    b.ToTable("CultureTypes", (string)null);
+                });
+
             modelBuilder.Entity("Segmentation.Domain.Entities.EsgKpi", b =>
                 {
                     b.Property<Guid>("Id")
@@ -44,6 +59,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("CropSeasonId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("TEXT");
@@ -64,7 +84,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CropSeasonId");
 
-                    b.HasIndex("FarmerId", "CropSeasonId")
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("FarmerId", "CropSeasonId", "CultureTypeCode")
                         .IsUnique();
 
                     b.ToTable("EsgKpis", (string)null);
@@ -202,6 +224,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("TEXT");
 
@@ -215,7 +242,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CropSeasonId");
 
-                    b.HasIndex("FarmerId", "CropSeasonId")
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("FarmerId", "CropSeasonId", "CultureTypeCode")
                         .IsUnique();
 
                     b.ToTable("FinancialKpis", (string)null);
@@ -230,9 +259,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonAmount")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CropSeasonStart")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Maximum")
                         .HasColumnType("INTEGER");
 
@@ -242,35 +268,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SegmentationConfigurationId");
+                    b.HasIndex("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("FinancialSelfFundingRanges", (string)null);
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.FinancialSelfFundingRangeSkippedCropSeason", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("CropSeasonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("FinancialSelfFundingRangeId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CropSeasonId");
-
-                    b.HasIndex("FinancialSelfFundingRangeId");
-
-                    b.ToTable("FinancialSelfFundingRangeSkippedCropSeasons", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.LoyaltyHistoricalVolumeRange", b =>
@@ -288,12 +293,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SegmentationConfigurationId");
+                    b.HasIndex("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("LoyaltyHistoricalVolumeRanges", (string)null);
                 });
@@ -307,6 +312,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("DeliveredPercentage")
                         .HasColumnType("INTEGER");
 
@@ -317,7 +327,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CropSeasonId");
 
-                    b.HasIndex("FarmerId", "CropSeasonId")
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("FarmerId", "CropSeasonId", "CultureTypeCode")
                         .IsUnique();
 
                     b.ToTable("LoyaltyKpis", (string)null);
@@ -328,9 +340,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("CropSeasonStart")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("DeliveryCropSeasonAmount")
                         .HasColumnType("INTEGER");
@@ -347,35 +356,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SegmentationConfigurationId");
+                    b.HasIndex("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("LoyaltySeasonQuantityRanges", (string)null);
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.LoyaltySeasonQuantityRangeSkippedCropSeason", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("CropSeasonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("LoyaltySeasonQuantityRangeId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CropSeasonId");
-
-                    b.HasIndex("LoyaltySeasonQuantityRangeId");
-
-                    b.ToTable("LoyaltySeasonQuantityRangeSkippedCropSeasons", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.QualityIqsRange", b =>
@@ -387,9 +375,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonAmount")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CropSeasonStart")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Maximum")
                         .HasColumnType("INTEGER");
 
@@ -399,35 +384,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SegmentationConfigurationId");
+                    b.HasIndex("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("QualityIqsRanges", (string)null);
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.QualityIqsRangeSkippedCropSeason", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("CropSeasonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("QualityIqsRangeId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CropSeasonId");
-
-                    b.HasIndex("QualityIqsRangeId");
-
-                    b.ToTable("QualityIqsRangeSkippedCropSeasons", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.QualityKpi", b =>
@@ -438,6 +402,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("CropSeasonId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
 
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("TEXT");
@@ -455,7 +424,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CropSeasonId");
 
-                    b.HasIndex("FarmerId", "CropSeasonId")
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("FarmerId", "CropSeasonId", "CultureTypeCode")
                         .IsUnique();
 
                     b.ToTable("QualityKpis", (string)null);
@@ -470,6 +441,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("TEXT");
 
@@ -480,7 +456,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CropSeasonId");
 
-                    b.HasIndex("FarmerId", "CropSeasonId")
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("FarmerId", "CropSeasonId", "CultureTypeCode")
                         .IsUnique();
 
                     b.ToTable("ScaleKpis", (string)null);
@@ -495,9 +473,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonAmount")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CropSeasonStart")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Maximum")
                         .HasColumnType("INTEGER");
 
@@ -507,35 +482,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SegmentationConfigurationId");
+                    b.HasIndex("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("ScaleRanges", (string)null);
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.ScaleRangeSkippedCropSeason", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("CropSeasonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("ScaleRangeId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CropSeasonId");
-
-                    b.HasIndex("ScaleRangeId");
-
-                    b.ToTable("ScaleRangeSkippedCropSeasons", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfiguration", b =>
@@ -543,9 +497,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("MaximumScore")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -557,13 +508,62 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.ToTable("SegmentationConfigurations", (string)null);
                 });
 
-            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationEsg", b =>
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", b =>
                 {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("MaximumScore")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("SegmentationConfigurationId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("MajorIrregularityCropSeason")
+                    b.HasKey("Id");
+
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("SegmentationConfigurationId", "CultureTypeCode")
+                        .IsUnique();
+
+                    b.ToTable("SegmentationConfigurationCultureTypes", (string)null);
+                });
+
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationCultureTypeSegment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RangeMin")
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SegmentationSegmentId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SegmentationSegmentId");
+
+                    b.HasIndex("SegmentationConfigurationCultureTypeId", "SegmentationSegmentId")
+                        .IsUnique();
+
+                    b.ToTable("SegmentationConfigurationCultureTypeSegments", (string)null);
+                });
+
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationEsg", b =>
+                {
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("MajorIrregularityScore")
                         .HasColumnType("INTEGER");
@@ -571,22 +571,13 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("MaxScore")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("MinorIrregularityCropSeason")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("MinorIrregularityScore")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("NativeForestCropSeason")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("NativeForestMaximumScore")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("NativeForestScorePerPercentualPoint")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("ReforestationCropSeason")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ReforestationMaximumScore")
@@ -599,18 +590,15 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .HasPrecision(9, 4)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("SegmentationConfigurationId");
+                    b.HasKey("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("SegmentationConfigurationEsgs", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationFinancial", b =>
                 {
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
-
-                    b.Property<int>("DebtCropSeason")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("DebtScore")
                         .HasColumnType("INTEGER");
@@ -622,14 +610,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .HasPrecision(9, 4)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("SegmentationConfigurationId");
+                    b.HasKey("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("SegmentationConfigurationFinancials", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationLoyalty", b =>
                 {
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("MaxScore")
@@ -639,32 +627,20 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .HasPrecision(9, 4)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("SegmentationConfigurationId");
+                    b.HasKey("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("SegmentationConfigurationLoyalties", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationQuality", b =>
                 {
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("MaxScore")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("MixtureCropSeasonAmount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("MixtureCropSeasonStart")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("MixtureScore")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("NtrmCropSeasonAmount")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("NtrmCropSeasonStart")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("NtrmScore")
@@ -674,14 +650,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .HasPrecision(9, 4)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("SegmentationConfigurationId");
+                    b.HasKey("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("SegmentationConfigurationQualities", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationScale", b =>
                 {
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("MaxScore")
@@ -691,29 +667,23 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .HasPrecision(9, 4)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("SegmentationConfigurationId");
+                    b.HasKey("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("SegmentationConfigurationScales", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationTechnology", b =>
                 {
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("HasBroadGrateFurnaceCropSeason")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("HasBroadGrateFurnaceScore")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("HasLargeBaseRidgeWithMulchCropSeason")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("HasLargeBaseRidgeWithMulchScore")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("HasTechnologyPackageAdherenceCropSeason")
+                    b.Property<int>("HasStandardBarnScore")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("HasTechnologyPackageAdherenceScore")
@@ -726,14 +696,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .HasPrecision(9, 4)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("SegmentationConfigurationId");
+                    b.HasKey("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("SegmentationConfigurationTechnologies", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationYield", b =>
                 {
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("MaxScore")
@@ -743,7 +713,7 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .HasPrecision(9, 4)
                         .HasColumnType("TEXT");
 
-                    b.HasKey("SegmentationConfigurationId");
+                    b.HasKey("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("SegmentationConfigurationYields", (string)null);
                 });
@@ -751,16 +721,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSegment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("BankDepositDiscount")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("OnlyExclusiveFarmer")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("RangeMin")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("SegmentName")
@@ -810,10 +776,37 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.ToTable("SegmentationSimulations", (string)null);
                 });
 
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSimulationCropSeason", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("CropSeasonId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("SegmentationSimulationId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CropSeasonId");
+
+                    b.HasIndex("SegmentationSimulationId", "CropSeasonId")
+                        .IsUnique();
+
+                    b.ToTable("SegmentationSimulationCropSeasons", (string)null);
+                });
+
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSimulationFarmer", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("EsgScore")
@@ -876,6 +869,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("TEXT");
 
@@ -885,6 +883,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<bool>("HasLargeBaseRidgeWithMulch")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("HasStandardBarn")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("HasTechnologyPackageAdherence")
                         .HasColumnType("INTEGER");
 
@@ -892,7 +893,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CropSeasonId");
 
-                    b.HasIndex("FarmerId", "CropSeasonId")
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("FarmerId", "CropSeasonId", "CultureTypeCode")
                         .IsUnique();
 
                     b.ToTable("TechnologiesKpis", (string)null);
@@ -907,6 +910,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CultureTypeCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("FarmerId")
                         .HasColumnType("TEXT");
 
@@ -917,7 +925,9 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CropSeasonId");
 
-                    b.HasIndex("FarmerId", "CropSeasonId")
+                    b.HasIndex("CultureTypeCode");
+
+                    b.HasIndex("FarmerId", "CropSeasonId", "CultureTypeCode")
                         .IsUnique();
 
                     b.ToTable("YieldKpis", (string)null);
@@ -932,9 +942,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("CropSeasonAmount")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("CropSeasonStart")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Maximum")
                         .HasColumnType("INTEGER");
 
@@ -944,35 +951,14 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("SegmentationConfigurationId")
+                    b.Property<Guid>("SegmentationConfigurationCultureTypeId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SegmentationConfigurationId");
+                    b.HasIndex("SegmentationConfigurationCultureTypeId");
 
                     b.ToTable("YieldRanges", (string)null);
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.YieldRangeSkippedCropSeason", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("CropSeasonId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("YieldRangeId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CropSeasonId");
-
-                    b.HasIndex("YieldRangeId");
-
-                    b.ToTable("YieldRangeSkippedCropSeasons", (string)null);
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.EsgKpi", b =>
@@ -983,6 +969,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
+                        .WithMany()
+                        .HasForeignKey("CultureTypeCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Segmentation.Domain.Entities.Farmer", "Farmer")
                         .WithMany("EsgKpis")
                         .HasForeignKey("FarmerId")
@@ -990,6 +982,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("CropSeason");
+
+                    b.Navigation("CultureType");
 
                     b.Navigation("Farmer");
                 });
@@ -1047,6 +1041,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
+                        .WithMany()
+                        .HasForeignKey("CultureTypeCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Segmentation.Domain.Entities.Farmer", "Farmer")
                         .WithMany("FinancialKpis")
                         .HasForeignKey("FarmerId")
@@ -1055,6 +1055,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.Navigation("CropSeason");
 
+                    b.Navigation("CultureType");
+
                     b.Navigation("Farmer");
                 });
 
@@ -1062,37 +1064,18 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationFinancial", "Financial")
                         .WithMany("SelfFundingRanges")
-                        .HasForeignKey("SegmentationConfigurationId")
+                        .HasForeignKey("SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Financial");
                 });
 
-            modelBuilder.Entity("Segmentation.Domain.Entities.FinancialSelfFundingRangeSkippedCropSeason", b =>
-                {
-                    b.HasOne("Segmentation.Domain.Entities.CropSeason", "CropSeason")
-                        .WithMany()
-                        .HasForeignKey("CropSeasonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Segmentation.Domain.Entities.FinancialSelfFundingRange", "Range")
-                        .WithMany("SkippedCropSeasons")
-                        .HasForeignKey("FinancialSelfFundingRangeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CropSeason");
-
-                    b.Navigation("Range");
-                });
-
             modelBuilder.Entity("Segmentation.Domain.Entities.LoyaltyHistoricalVolumeRange", b =>
                 {
                     b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationLoyalty", "Loyalty")
                         .WithMany("HistoricalVolumeRanges")
-                        .HasForeignKey("SegmentationConfigurationId")
+                        .HasForeignKey("SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1107,6 +1090,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
+                        .WithMany()
+                        .HasForeignKey("CultureTypeCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Segmentation.Domain.Entities.Farmer", "Farmer")
                         .WithMany("LoyaltyKpis")
                         .HasForeignKey("FarmerId")
@@ -1115,6 +1104,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.Navigation("CropSeason");
 
+                    b.Navigation("CultureType");
+
                     b.Navigation("Farmer");
                 });
 
@@ -1122,60 +1113,22 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationLoyalty", "Loyalty")
                         .WithMany("SeasonQuantityRanges")
-                        .HasForeignKey("SegmentationConfigurationId")
+                        .HasForeignKey("SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Loyalty");
                 });
 
-            modelBuilder.Entity("Segmentation.Domain.Entities.LoyaltySeasonQuantityRangeSkippedCropSeason", b =>
-                {
-                    b.HasOne("Segmentation.Domain.Entities.CropSeason", "CropSeason")
-                        .WithMany()
-                        .HasForeignKey("CropSeasonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Segmentation.Domain.Entities.LoyaltySeasonQuantityRange", "Range")
-                        .WithMany("SkippedCropSeasons")
-                        .HasForeignKey("LoyaltySeasonQuantityRangeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CropSeason");
-
-                    b.Navigation("Range");
-                });
-
             modelBuilder.Entity("Segmentation.Domain.Entities.QualityIqsRange", b =>
                 {
                     b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationQuality", "Quality")
                         .WithMany("IqsRanges")
-                        .HasForeignKey("SegmentationConfigurationId")
+                        .HasForeignKey("SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Quality");
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.QualityIqsRangeSkippedCropSeason", b =>
-                {
-                    b.HasOne("Segmentation.Domain.Entities.CropSeason", "CropSeason")
-                        .WithMany()
-                        .HasForeignKey("CropSeasonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Segmentation.Domain.Entities.QualityIqsRange", "Range")
-                        .WithMany("SkippedCropSeasons")
-                        .HasForeignKey("QualityIqsRangeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CropSeason");
-
-                    b.Navigation("Range");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.QualityKpi", b =>
@@ -1186,6 +1139,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
+                        .WithMany()
+                        .HasForeignKey("CultureTypeCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Segmentation.Domain.Entities.Farmer", "Farmer")
                         .WithMany("QualityKpis")
                         .HasForeignKey("FarmerId")
@@ -1193,6 +1152,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("CropSeason");
+
+                    b.Navigation("CultureType");
 
                     b.Navigation("Farmer");
                 });
@@ -1205,6 +1166,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
+                        .WithMany()
+                        .HasForeignKey("CultureTypeCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Segmentation.Domain.Entities.Farmer", "Farmer")
                         .WithMany("ScaleKpis")
                         .HasForeignKey("FarmerId")
@@ -1213,6 +1180,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.Navigation("CropSeason");
 
+                    b.Navigation("CultureType");
+
                     b.Navigation("Farmer");
                 });
 
@@ -1220,107 +1189,126 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationScale", "Scale")
                         .WithMany("Ranges")
-                        .HasForeignKey("SegmentationConfigurationId")
+                        .HasForeignKey("SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Scale");
                 });
 
-            modelBuilder.Entity("Segmentation.Domain.Entities.ScaleRangeSkippedCropSeason", b =>
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.CropSeason", "CropSeason")
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
                         .WithMany()
-                        .HasForeignKey("CropSeasonId")
+                        .HasForeignKey("CultureTypeCode")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Segmentation.Domain.Entities.ScaleRange", "Range")
-                        .WithMany("SkippedCropSeasons")
-                        .HasForeignKey("ScaleRangeId")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                        .WithMany("CultureTypes")
+                        .HasForeignKey("SegmentationConfigurationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("CropSeason");
+                    b.Navigation("CultureType");
 
-                    b.Navigation("Range");
+                    b.Navigation("SegmentationConfiguration");
+                });
+
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationCultureTypeSegment", b =>
+                {
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
+                        .WithMany("CultureTypeSegments")
+                        .HasForeignKey("SegmentationConfigurationCultureTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationSegment", "Segment")
+                        .WithMany("CultureTypeSegments")
+                        .HasForeignKey("SegmentationSegmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CultureType");
+
+                    b.Navigation("Segment");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationEsg", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
                         .WithOne("Esg")
-                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationEsg", "SegmentationConfigurationId")
+                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationEsg", "SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("SegmentationConfiguration");
+                    b.Navigation("CultureType");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationFinancial", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
                         .WithOne("Financial")
-                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationFinancial", "SegmentationConfigurationId")
+                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationFinancial", "SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("SegmentationConfiguration");
+                    b.Navigation("CultureType");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationLoyalty", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
                         .WithOne("Loyalty")
-                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationLoyalty", "SegmentationConfigurationId")
+                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationLoyalty", "SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("SegmentationConfiguration");
+                    b.Navigation("CultureType");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationQuality", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
                         .WithOne("Quality")
-                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationQuality", "SegmentationConfigurationId")
+                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationQuality", "SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("SegmentationConfiguration");
+                    b.Navigation("CultureType");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationScale", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
                         .WithOne("Scale")
-                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationScale", "SegmentationConfigurationId")
+                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationScale", "SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("SegmentationConfiguration");
+                    b.Navigation("CultureType");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationTechnology", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
                         .WithOne("Technology")
-                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationTechnology", "SegmentationConfigurationId")
+                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationTechnology", "SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("SegmentationConfiguration");
+                    b.Navigation("CultureType");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationYield", b =>
                 {
-                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfiguration", "SegmentationConfiguration")
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", "CultureType")
                         .WithOne("Yield")
-                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationYield", "SegmentationConfigurationId")
+                        .HasForeignKey("Segmentation.Domain.Entities.SegmentationConfigurationYield", "SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("SegmentationConfiguration");
+                    b.Navigation("CultureType");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSegment", b =>
@@ -1351,6 +1339,25 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Navigation("CropSeason");
 
                     b.Navigation("SegmentationConfiguration");
+                });
+
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSimulationCropSeason", b =>
+                {
+                    b.HasOne("Segmentation.Domain.Entities.CropSeason", "CropSeason")
+                        .WithMany()
+                        .HasForeignKey("CropSeasonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Segmentation.Domain.Entities.SegmentationSimulation", "SegmentationSimulation")
+                        .WithMany("ScopeCropSeasons")
+                        .HasForeignKey("SegmentationSimulationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CropSeason");
+
+                    b.Navigation("SegmentationSimulation");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSimulationFarmer", b =>
@@ -1387,6 +1394,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
+                        .WithMany()
+                        .HasForeignKey("CultureTypeCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Segmentation.Domain.Entities.Farmer", "Farmer")
                         .WithMany("TechnologiesKpis")
                         .HasForeignKey("FarmerId")
@@ -1394,6 +1407,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("CropSeason");
+
+                    b.Navigation("CultureType");
 
                     b.Navigation("Farmer");
                 });
@@ -1406,6 +1421,12 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Segmentation.Domain.Entities.CultureType", "CultureType")
+                        .WithMany()
+                        .HasForeignKey("CultureTypeCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Segmentation.Domain.Entities.Farmer", "Farmer")
                         .WithMany("YieldKpis")
                         .HasForeignKey("FarmerId")
@@ -1414,6 +1435,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
                     b.Navigation("CropSeason");
 
+                    b.Navigation("CultureType");
+
                     b.Navigation("Farmer");
                 });
 
@@ -1421,30 +1444,11 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("Segmentation.Domain.Entities.SegmentationConfigurationYield", "Yield")
                         .WithMany("Ranges")
-                        .HasForeignKey("SegmentationConfigurationId")
+                        .HasForeignKey("SegmentationConfigurationCultureTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Yield");
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.YieldRangeSkippedCropSeason", b =>
-                {
-                    b.HasOne("Segmentation.Domain.Entities.CropSeason", "CropSeason")
-                        .WithMany()
-                        .HasForeignKey("CropSeasonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Segmentation.Domain.Entities.YieldRange", "Range")
-                        .WithMany("SkippedCropSeasons")
-                        .HasForeignKey("YieldRangeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CropSeason");
-
-                    b.Navigation("Range");
                 });
 
             modelBuilder.Entity("Segmentation.Domain.Entities.Farmer", b =>
@@ -1475,28 +1479,19 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Navigation("Farmers");
                 });
 
-            modelBuilder.Entity("Segmentation.Domain.Entities.FinancialSelfFundingRange", b =>
-                {
-                    b.Navigation("SkippedCropSeasons");
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.LoyaltySeasonQuantityRange", b =>
-                {
-                    b.Navigation("SkippedCropSeasons");
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.QualityIqsRange", b =>
-                {
-                    b.Navigation("SkippedCropSeasons");
-                });
-
-            modelBuilder.Entity("Segmentation.Domain.Entities.ScaleRange", b =>
-                {
-                    b.Navigation("SkippedCropSeasons");
-                });
-
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfiguration", b =>
                 {
+                    b.Navigation("CultureTypes");
+
+                    b.Navigation("Segments");
+
+                    b.Navigation("Simulations");
+                });
+
+            modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationConfigurationCultureType", b =>
+                {
+                    b.Navigation("CultureTypeSegments");
+
                     b.Navigation("Esg");
 
                     b.Navigation("Financial");
@@ -1506,10 +1501,6 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
                     b.Navigation("Quality");
 
                     b.Navigation("Scale");
-
-                    b.Navigation("Segments");
-
-                    b.Navigation("Simulations");
 
                     b.Navigation("Technology");
 
@@ -1545,6 +1536,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSegment", b =>
                 {
+                    b.Navigation("CultureTypeSegments");
+
                     b.Navigation("FarmerSegmentations");
 
                     b.Navigation("SimulationFarmers");
@@ -1553,11 +1546,8 @@ namespace Segmentation.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Segmentation.Domain.Entities.SegmentationSimulation", b =>
                 {
                     b.Navigation("Farmers");
-                });
 
-            modelBuilder.Entity("Segmentation.Domain.Entities.YieldRange", b =>
-                {
-                    b.Navigation("SkippedCropSeasons");
+                    b.Navigation("ScopeCropSeasons");
                 });
 #pragma warning restore 612, 618
         }

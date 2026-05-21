@@ -17,7 +17,7 @@ export const hints = {
     'Each KPI type has its own grid for the selected season. You can bulk-load or update values with CSV import; rows are upserted by farmer code and crop season id.',
 
   homeConfigs:
-    'A segmentation configuration bundles segment thresholds (commercial tiers) with scoring rules for Loyalty, Quality, Finance, Technology, ESG, Yield, and Scale. Saving enforces that the sum of derived KPI maximum scores equals the configuration Maximum score.',
+    'A segmentation configuration bundles segment thresholds (commercial tiers) with scoring rules for Loyalty, Quality, Finance, Technology, ESG, Yield, Scale, and optional combined Yield & Scale. Saving enforces that the sum of derived KPI maximum scores equals the configuration Maximum score.',
 
   homeSimulations:
     'A simulation applies one configuration to every farmer, stores component scores and a chosen crop season id on the run (for history and accept-official), assigns a segment from total score, and ranks farmers with competition ranking (ties share rank). Rule anchors come from the configuration, not from that stored season. Accepting replaces the official segmentation snapshot for the run’s crop season.',
@@ -44,13 +44,13 @@ export const hints = {
   csvScale: 'Columns: FarmerCode, CropSeasonId, Scale.',
 
   csvTechnologies:
-    'Columns: FarmerCode, CropSeasonId, HasLargeBaseRidgeWithMulch, HasBroadGrateFurnace, HasTechnologyPackageAdherence.',
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode (optional), HasLargeBaseRidgeWithMulch, HasBroadGrateFurnace, HasTechnologyPackageAdherence, HasStandardBarn (optional, defaults to false).',
 
   csvEsg:
     'Columns: FarmerCode, CropSeasonId, ReforestationPercentage, NativeForestPercentage, HasMinorIrregularity, HasMajorIrregularity.',
 
   configMaximumScore:
-    'Target total of all KPI caps after rules are interpreted. The server recomputes each block’s MaxScore from your ranges and caps, then requires: Loyalty + Quality + Financial + Technology + ESG + Yield + Scale = Maximum score. The panel below shows the live breakdown while you edit.',
+    'Target total of all KPI caps after rules are interpreted. The server recomputes each block’s MaxScore from your ranges and caps, then requires: Loyalty + Quality + Financial + Technology + ESG + Yield + Scale + Yield & Scale = Maximum score. The panel below shows the live breakdown while you edit.',
 
   configRelevance:
     'Relevance is **derived max for that KPI ÷ configuration maximum score** (shown as %). While the sum of derived caps equals the maximum score, changing one % **rescales all score fields** in every KPI block so caps stay married to those shares. Simulation totals still use the rescaled rule scores.',
@@ -78,6 +78,9 @@ export const hints = {
 
   yieldScale:
     'Each range uses its Crop season start as the right end of the look-back window; every season in the window (except skipped) must fall inside min/max. Best matching row score wins.',
+
+  yieldAndScale:
+    'Optional combined KPI using existing Yield and Scale facts (no new KPI import). Counts scope seasons where both values exist, compares planting count, average yield, and average module (hectares) to one range. A farmer matches at most one range; cap is the largest positive range score. Set relevance to 0% here and use separate Yield/Scale tabs, or the opposite.',
 
   simulationCreate:
     'Creates a new run for all farmers. Scores use only seasons and anchors from the configuration plus KPI history; the crop season you pick is stored on the simulation and used when you accept as official (FarmerSegmentation for that season). Status S until accepted.',

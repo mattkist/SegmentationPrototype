@@ -18,4 +18,6 @@ public class TechnologiesKpi
     public bool HasBroadGrateFurnace { get; set; }
 
     public bool HasTechnologyPackageAdherence { get; set; }
+
+    public bool HasStandardBarn { get; set; }
 }

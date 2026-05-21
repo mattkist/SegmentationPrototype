@@ -36,6 +36,7 @@ public static class DatabaseSeeder
             new CultureType { Code = "CO", Name = "Comum" });
 
         db.CropSeasons.AddRange(
+            new CropSeason { Id = 2023, Code = "2023" },
             new CropSeason { Id = 2024, Code = "2024" },
             new CropSeason { Id = 2025, Code = "2025" },
             new CropSeason { Id = 2026, Code = "2026" },
@@ -110,7 +111,8 @@ public static class DatabaseSeeder
                 CultureTypeCode = CultureFor(row.FarmerId),
                 HasLargeBaseRidgeWithMulch = row.Mulch,
                 HasBroadGrateFurnace = row.Furnace,
-                HasTechnologyPackageAdherence = row.Package
+                HasTechnologyPackageAdherence = row.Package,
+                HasStandardBarn = row.Barn
             });
 
         foreach (var row in EsgSeed())
@@ -131,6 +133,9 @@ public static class DatabaseSeeder
 
     private static IEnumerable<(Guid FarmerId, int Season, int Delivered)> LoyaltySeed()
     {
+        yield return (F900100, 2023, 92);
+        yield return (F900101, 2023, 91);
+        yield return (F900102, 2023, 93);
         yield return (F900100, 2024, 92);
         yield return (F900101, 2024, 91);
         yield return (F900102, 2024, 93);
@@ -151,7 +156,7 @@ public static class DatabaseSeeder
 
     private static IEnumerable<(Guid FarmerId, int Season, int Iqs, bool Ntrm, bool Mixture)> QualitySeed()
     {
-        foreach (var s in new[] { 2024, 2025 })
+        foreach (var s in new[] { 2023, 2024, 2025 })
         {
             yield return (F900100, s, 92, false, false);
             yield return (F900101, s, 91, false, false);
@@ -176,7 +181,7 @@ public static class DatabaseSeeder
 
     private static IEnumerable<(Guid FarmerId, int Season, int Sf, bool Debt)> FinancialSeed()
     {
-        foreach (var s in new[] { 2024, 2025 })
+        foreach (var s in new[] { 2023, 2024, 2025 })
         {
             yield return (F900100, s, 92, false);
             yield return (F900101, s, 91, false);
@@ -201,7 +206,7 @@ public static class DatabaseSeeder
 
     private static IEnumerable<(Guid FarmerId, int Season, int Yield)> YieldSeed()
     {
-        foreach (var s in new[] { 2024, 2025, 2026 })
+        foreach (var s in new[] { 2023, 2024, 2025, 2026 })
         {
             yield return (F900100, s, 3000);
             yield return (F900101, s, 3000);
@@ -221,7 +226,7 @@ public static class DatabaseSeeder
 
     private static IEnumerable<(Guid FarmerId, int Season, int Scale)> ScaleSeed()
     {
-        foreach (var s in new[] { 2024, 2025, 2026 })
+        foreach (var s in new[] { 2023, 2024, 2025, 2026 })
         {
             yield return (F900100, s, 6);
             yield return (F900101, s, 6);
@@ -239,29 +244,29 @@ public static class DatabaseSeeder
         }
     }
 
-    private static IEnumerable<(Guid FarmerId, int Season, bool Mulch, bool Furnace, bool Package)> TechnologiesSeed()
+    private static IEnumerable<(Guid FarmerId, int Season, bool Mulch, bool Furnace, bool Package, bool Barn)> TechnologiesSeed()
     {
-        foreach (var s in new[] { 2024, 2025, 2026 })
+        foreach (var s in new[] { 2023, 2024, 2025, 2026 })
         {
-            yield return (F900100, s, true, true, true);
-            yield return (F900101, s, true, true, true);
-            yield return (F900102, s, true, true, true);
+            yield return (F900100, s, true, true, true, false);
+            yield return (F900101, s, true, true, true, false);
+            yield return (F900102, s, true, true, true, false);
         }
 
         foreach (var s in new[] { 2025, 2026 })
         {
-            yield return (F900201, s, true, true, false);
-            yield return (F900202, s, true, true, false);
-            yield return (F900203, s, false, false, false);
-            yield return (F900301, s, true, false, false);
-            yield return (F900302, s, true, false, false);
-            yield return (F900303, s, false, false, false);
+            yield return (F900201, s, true, true, false, true);
+            yield return (F900202, s, true, true, false, true);
+            yield return (F900203, s, false, false, false, false);
+            yield return (F900301, s, true, false, false, false);
+            yield return (F900302, s, true, false, false, false);
+            yield return (F900303, s, false, false, false, false);
         }
     }
 
     private static IEnumerable<(Guid FarmerId, int Season, int Ref, int Native, bool Minor, bool Major)> EsgSeed()
     {
-        foreach (var s in new[] { 2024, 2025, 2026 })
+        foreach (var s in new[] { 2023, 2024, 2025, 2026 })
         {
             yield return (F900100, s, 20, 18, false, false);
             yield return (F900101, s, 20, 18, false, false);

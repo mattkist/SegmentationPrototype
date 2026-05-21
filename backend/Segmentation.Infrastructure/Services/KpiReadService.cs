@@ -69,7 +69,7 @@ public sealed class KpiReadService(AppDbContext db) : IKpiReadService
             query = query.Where(k => k.CultureTypeCode == cultureTypeCode);
         return await query
             .OrderBy(k => k.Farmer.Code)
-            .Select(k => new TechnologiesKpiRowDto(k.Farmer.Code, k.CropSeasonId, k.CropSeason.Code, k.CultureTypeCode, k.HasLargeBaseRidgeWithMulch, k.HasBroadGrateFurnace, k.HasTechnologyPackageAdherence))
+            .Select(k => new TechnologiesKpiRowDto(k.Farmer.Code, k.CropSeasonId, k.CropSeason.Code, k.CultureTypeCode, k.HasLargeBaseRidgeWithMulch, k.HasBroadGrateFurnace, k.HasTechnologyPackageAdherence, k.HasStandardBarn))
             .ToListAsync(cancellationToken);
     }
 

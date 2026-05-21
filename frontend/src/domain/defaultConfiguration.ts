@@ -1,37 +1,17 @@
-import type { SaveSegmentationConfigurationDto } from '../api/types'
+import type {
+  CultureTypeConfigurationWriteDto,
+  SaveSegmentationConfigurationDto,
+} from '../api/types'
 import { syncRelevancesFromCaps } from './kpiRelevanceCaps'
 
-/** Balanced template: derived KPI caps sum to 100 (matches maximumScore). */
-export function createDefaultConfiguration(): SaveSegmentationConfigurationDto {
+export function createCultureTypeBlock(code: string): CultureTypeConfigurationWriteDto {
   return syncRelevancesFromCaps({
-    name: 'New configuration',
-    cultureTypeCode: 'FCV',
+    cultureTypeCode: code,
     maximumScore: 100,
-    segments: [
-      {
-        id: undefined,
-        segmentName: 'Diamond',
-        rangeMin: 75,
-        onlyExclusiveFarmer: false,
-        bankDepositDiscount: 0,
-        tobaccoDiscount: 0,
-      },
-      {
-        id: undefined,
-        segmentName: 'Gold',
-        rangeMin: 45,
-        onlyExclusiveFarmer: false,
-        bankDepositDiscount: 0,
-        tobaccoDiscount: 0,
-      },
-      {
-        id: undefined,
-        segmentName: 'Standard',
-        rangeMin: null,
-        onlyExclusiveFarmer: false,
-        bankDepositDiscount: 0,
-        tobaccoDiscount: 0,
-      },
+    segmentThresholds: [
+      { segmentName: 'Diamond', rangeMin: 75 },
+      { segmentName: 'Gold', rangeMin: 45 },
+      { segmentName: 'Standard', rangeMin: null },
     ],
     loyalty: {
       relevance: 0.15,
@@ -42,85 +22,74 @@ export function createDefaultConfiguration(): SaveSegmentationConfigurationDto {
     },
     quality: {
       relevance: 0.15,
-      ntrmCropSeasonAmount: 1,
-      ntrmCropSeasonStart: 2026,
       ntrmScore: 0,
-      mixtureCropSeasonAmount: 1,
-      mixtureCropSeasonStart: 2026,
       mixtureScore: 0,
       iqsRanges: [
-        {
-          minimum: 0,
-          maximum: 100,
-          cropSeasonAmount: 1,
-          cropSeasonStart: 2026,
-          score: 20,
-          skippedCropSeasonIds: [],
-        },
+        { minimum: 0, maximum: 100, cropSeasonAmount: 1, score: 20 },
       ],
     },
     financial: {
       relevance: 0.15,
-      debtCropSeason: 2026,
       debtScore: 0,
       selfFundingRanges: [
-        {
-          minimum: 0,
-          maximum: 100,
-          cropSeasonAmount: 1,
-          cropSeasonStart: 2026,
-          score: 15,
-          skippedCropSeasonIds: [],
-        },
+        { minimum: 0, maximum: 100, cropSeasonAmount: 1, score: 15 },
       ],
     },
     technology: {
       relevance: 0.12,
-      hasLargeBaseRidgeWithMulchCropSeason: 2024,
       hasLargeBaseRidgeWithMulchScore: 5,
-      hasBroadGrateFurnaceCropSeason: 2024,
       hasBroadGrateFurnaceScore: 5,
-      hasTechnologyPackageAdherenceCropSeason: 2024,
       hasTechnologyPackageAdherenceScore: 5,
+      hasStandardBarnScore: 0,
     },
     esg: {
       relevance: 0.13,
-      reforestationCropSeason: 2024,
       reforestationScorePerPercentualPoint: 1,
       reforestationMaximumScore: 10,
-      nativeForestCropSeason: 2024,
       nativeForestScorePerPercentualPoint: 1,
       nativeForestMaximumScore: 10,
-      minorIrregularityCropSeason: 2026,
       minorIrregularityScore: 0,
-      majorIrregularityCropSeason: 2026,
       majorIrregularityScore: 0,
     },
     yield: {
       relevance: 0.15,
-      ranges: [
-        {
-          minimum: 0,
-          maximum: 999999,
-          cropSeasonAmount: 1,
-          cropSeasonStart: 2026,
-          score: 10,
-          skippedCropSeasonIds: [],
-        },
-      ],
+      ranges: [{ minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 10 }],
     },
     scale: {
       relevance: 0.15,
-      ranges: [
-        {
-          minimum: 0,
-          maximum: 999999,
-          cropSeasonAmount: 1,
-          cropSeasonStart: 2026,
-          score: 10,
-          skippedCropSeasonIds: [],
-        },
-      ],
+      ranges: [{ minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 10 }],
+    },
+    yieldAndScale: {
+      relevance: 0,
+      ranges: [],
     },
   })
+}
+
+/** Balanced template with header segments and one FCV culture-type block. */
+export function createDefaultConfiguration(): SaveSegmentationConfigurationDto {
+  return {
+    name: 'New configuration',
+    segments: [
+      {
+        segmentName: 'Diamond',
+        onlyExclusiveFarmer: false,
+        bankDepositDiscount: 0,
+        tobaccoDiscount: 0,
+      },
+      {
+        segmentName: 'Gold',
+        onlyExclusiveFarmer: false,
+        bankDepositDiscount: 0,
+        tobaccoDiscount: 0,
+      },
+      {
+        segmentName: 'Standard',
+        onlyExclusiveFarmer: false,
+        bankDepositDiscount: 0,
+        tobaccoDiscount: 0,
+      },
+    ],
+    cultureTypes: [createCultureTypeBlock('FCV')],
+  }
 }

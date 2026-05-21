@@ -81,12 +81,7 @@ export function SimulationDetailPage() {
             <table className="min-w-full text-left text-xs">
               <thead className="sticky top-0 border-b border-black/5 bg-surface-muted/95 text-[10px] font-semibold uppercase tracking-wide text-ink-faint backdrop-blur">
                 <tr>
-                  <th className="px-3 py-2">
-                    <span className="inline-flex items-center gap-1">
-                      Rank
-                      <Hint content={hints.simulationRank} />
-                    </span>
-                  </th>
+                  <th className="px-3 py-2">Culture</th>
                   <th className="px-3 py-2">Farmer</th>
                   <th className="px-3 py-2">Total</th>
                   <th className="px-3 py-2">Loy</th>
@@ -96,6 +91,7 @@ export function SimulationDetailPage() {
                   <th className="px-3 py-2">ESG</th>
                   <th className="px-3 py-2">Yld</th>
                   <th className="px-3 py-2">Scl</th>
+                  <th className="px-3 py-2">Y&amp;S</th>
                   <th className="px-3 py-2">
                     <span className="inline-flex items-center gap-1">
                       Segment
@@ -113,7 +109,7 @@ export function SimulationDetailPage() {
               <tbody className="divide-y divide-black/5">
                 {data.farmers.map((f) => (
                   <tr key={f.farmerId} className="hover:bg-surface-muted/30">
-                    <td className="px-3 py-1.5 font-mono font-semibold tabular-nums">{f.rank}</td>
+                    <td className="px-3 py-1.5 font-mono text-ink-muted">{f.cultureTypeCode}</td>
                     <td className="px-3 py-1.5">
                       <div className="font-medium text-ink">{f.farmerName}</div>
                       <div className="font-mono text-[10px] text-ink-faint">{f.farmerCode}</div>
@@ -126,6 +122,7 @@ export function SimulationDetailPage() {
                     <td className="px-3 py-1.5 font-mono tabular-nums text-ink-muted">{f.esgScore}</td>
                     <td className="px-3 py-1.5 font-mono tabular-nums text-ink-muted">{f.yieldScore}</td>
                     <td className="px-3 py-1.5 font-mono tabular-nums text-ink-muted">{f.scaleScore}</td>
+                    <td className="px-3 py-1.5 font-mono tabular-nums text-ink-muted">{f.yieldAndScaleScore}</td>
                     <td className="px-3 py-1.5 text-ink-muted">{f.segmentName ?? '—'}</td>
                     <td className="px-3 py-1.5">{f.nonExclusiveFarmer ? 'Y' : 'N'}</td>
                   </tr>

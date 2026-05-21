@@ -1,184 +1,131 @@
-import type { Dispatch, SetStateAction } from 'react'
-import type { SaveSegmentationConfigurationDto, YieldRangeDto } from '../../api/types'
-import { FieldLabel, SectionTitle } from '../../components/Hint'
-import { IntInput } from '../../components/NumericInputs'
+import type { SaveSegmentationConfigurationDto } from '../../api/types'
+import { InlineInt, PointsLabel, RuleBlock, RuleSentence } from '../../components/RuleSentence'
+import { SectionTitle } from '../../components/Hint'
 import { hints } from '../../hints/en'
+import { useCultureTypeEditor, type SetDraft } from './cultureTypeEditorUtils'
 
-type SetDraft = Dispatch<SetStateAction<SaveSegmentationConfigurationDto>>
-
-function parseSkipped(raw: string): number[] {
-  return raw
-    .split(/[,;\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => Number(s))
-    .filter((n) => Number.isFinite(n))
-}
-
-export function YieldEditor({ draft, setDraft }: { draft: SaveSegmentationConfigurationDto; setDraft: SetDraft }) {
-  const y = draft.yield
-  const patch = (i: number, part: Partial<YieldRangeDto>) => {
-    setDraft((d) => ({
-      ...d,
-      yield: {
-        ...d.yield,
-        ranges: d.yield.ranges.map((x, j) => (j === i ? { ...x, ...part } : x)),
-      },
-    }))
-  }
+function RangeList({
+  title,
+  hint,
+  labelBetween,
+  ranges,
+  onAdd,
+  onPatch,
+  onRemove,
+}: {
+  title: string
+  hint: string
+  labelBetween: string
+  ranges: { minimum: number; maximum: number; cropSeasonAmount: number; score: number }[]
+  onAdd: () => void
+  onPatch: (i: number, part: Partial<{ minimum: number; maximum: number; score: number }>) => void
+  onRemove: (i: number) => void
+}) {
   return (
-    <div className="space-y-4">
-      <SectionTitle title="Yield" hint={hints.yieldScale} />
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="text-xs font-semibold text-leaf hover:underline"
-          onClick={() =>
-            setDraft((d) => ({
-              ...d,
-              yield: {
-                ...d.yield,
-                ranges: [
-                  ...d.yield.ranges,
-                  {
-                    minimum: 0,
-                    maximum: 9999,
-                    cropSeasonAmount: 1,
-                    cropSeasonStart: 2026,
-                    score: 0,
-                    skippedCropSeasonIds: [],
-                  },
-                ],
-              },
-            }))
-          }
-        >
-          + Add yield range
+    <section className="space-y-3">
+      <SectionTitle title={title} hint={hint} />
+      <div className="flex items-center justify-end">
+        <button type="button" className="text-xs font-semibold text-leaf hover:underline" onClick={onAdd}>
+          + Add range
         </button>
       </div>
-      <div className="space-y-3">
-        {y.ranges.map((r, i) => (
-          <div key={i} className="grid gap-2 rounded-lg border border-black/5 p-3 sm:grid-cols-3 lg:grid-cols-6">
-            <IntInput label="Min yield" value={r.minimum} onChange={(v) => patch(i, { minimum: v })} />
-            <IntInput label="Max yield" value={r.maximum} onChange={(v) => patch(i, { maximum: v })} />
-            <IntInput
-              label="Crop season amount"
-              value={r.cropSeasonAmount}
-              onChange={(v) => patch(i, { cropSeasonAmount: v })}
-            />
-            <IntInput
-              label="Crop season start"
-              value={r.cropSeasonStart}
-              onChange={(v) => patch(i, { cropSeasonStart: v })}
-            />
-            <IntInput label="Score" value={r.score} onChange={(v) => patch(i, { score: v })} />
-            <label className="text-xs sm:col-span-2 lg:col-span-6">
-              <FieldLabel label="Skipped season ids" hint="Comma-separated ids." />
-              <input
-                className="mt-1 w-full rounded border border-black/10 px-2 py-1 font-mono text-xs focus:border-leaf focus:outline-none focus:ring-2 focus:ring-leaf/20"
-                value={r.skippedCropSeasonIds.join(', ')}
-                onChange={(e) => patch(i, { skippedCropSeasonIds: parseSkipped(e.target.value) })}
-              />
-            </label>
-            <button
-              type="button"
-              className="text-xs font-medium text-red-700 hover:underline"
-              onClick={() =>
-                setDraft((d) => ({
-                  ...d,
-                  yield: { ...d.yield, ranges: d.yield.ranges.filter((_, j) => j !== i) },
-                }))
-              }
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+      {ranges.map((r, i) => (
+        <RuleBlock key={i} onRemove={() => onRemove(i)}>
+          <RuleSentence>
+            {labelBetween}
+            <InlineInt value={r.minimum} onChange={(v) => onPatch(i, { minimum: v })} />
+            AND
+            <InlineInt value={r.maximum} onChange={(v) => onPatch(i, { maximum: v })} />
+            =
+            <InlineInt value={r.score} onChange={(v) => onPatch(i, { score: v })} />
+            <PointsLabel />
+          </RuleSentence>
+        </RuleBlock>
+      ))}
+    </section>
   )
 }
 
-export function ScaleEditor({ draft, setDraft }: { draft: SaveSegmentationConfigurationDto; setDraft: SetDraft }) {
-  const s = draft.scale
-  const patch = (i: number, part: Partial<(typeof s.ranges)[0]>) => {
-    setDraft((d) => ({
-      ...d,
-      scale: {
-        ...d.scale,
-        ranges: d.scale.ranges.map((x, j) => (j === i ? { ...x, ...part } : x)),
-      },
-    }))
-  }
+export function YieldEditor({
+  draft,
+  setDraft,
+  cultureTypeCode,
+}: {
+  draft: SaveSegmentationConfigurationDto
+  setDraft: SetDraft
+  cultureTypeCode: string
+}) {
+  const { block, patchBlock } = useCultureTypeEditor(draft, setDraft, cultureTypeCode)
   return (
-    <div className="space-y-4">
-      <SectionTitle title="Scale" hint={hints.yieldScale} />
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="text-xs font-semibold text-leaf hover:underline"
-          onClick={() =>
-            setDraft((d) => ({
-              ...d,
-              scale: {
-                ...d.scale,
-                ranges: [
-                  ...d.scale.ranges,
-                  {
-                    minimum: 0,
-                    maximum: 9999,
-                    cropSeasonAmount: 1,
-                    cropSeasonStart: 2026,
-                    score: 0,
-                    skippedCropSeasonIds: [],
-                  },
-                ],
-              },
-            }))
-          }
-        >
-          + Add scale range
-        </button>
-      </div>
-      <div className="space-y-3">
-        {s.ranges.map((r, i) => (
-          <div key={i} className="grid gap-2 rounded-lg border border-black/5 p-3 sm:grid-cols-3 lg:grid-cols-6">
-            <IntInput label="Min scale" value={r.minimum} onChange={(v) => patch(i, { minimum: v })} />
-            <IntInput label="Max scale" value={r.maximum} onChange={(v) => patch(i, { maximum: v })} />
-            <IntInput
-              label="Crop season amount"
-              value={r.cropSeasonAmount}
-              onChange={(v) => patch(i, { cropSeasonAmount: v })}
-            />
-            <IntInput
-              label="Crop season start"
-              value={r.cropSeasonStart}
-              onChange={(v) => patch(i, { cropSeasonStart: v })}
-            />
-            <IntInput label="Score" value={r.score} onChange={(v) => patch(i, { score: v })} />
-            <label className="text-xs sm:col-span-2 lg:col-span-6">
-              <FieldLabel label="Skipped season ids" hint="Comma-separated ids." />
-              <input
-                className="mt-1 w-full rounded border border-black/10 px-2 py-1 font-mono text-xs focus:border-leaf focus:outline-none focus:ring-2 focus:ring-leaf/20"
-                value={r.skippedCropSeasonIds.join(', ')}
-                onChange={(e) => patch(i, { skippedCropSeasonIds: parseSkipped(e.target.value) })}
-              />
-            </label>
-            <button
-              type="button"
-              className="text-xs font-medium text-red-700 hover:underline"
-              onClick={() =>
-                setDraft((d) => ({
-                  ...d,
-                  scale: { ...d.scale, ranges: d.scale.ranges.filter((_, j) => j !== i) },
-                }))
-              }
-            >
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+    <RangeList
+      title="Yield"
+      hint={`${hints.yieldScale}\n\nSimulation uses only the latest crop season in the scope list.`}
+      labelBetween="Yield BETWEEN"
+      ranges={block.yield.ranges}
+      onAdd={() =>
+        patchBlock((b) => ({
+          ...b,
+          yield: {
+            ...b.yield,
+            ranges: [...b.yield.ranges, { minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 0 }],
+          },
+        }))
+      }
+      onPatch={(i, part) =>
+        patchBlock((b) => {
+          const arr = [...b.yield.ranges]
+          arr[i] = { ...arr[i], ...part }
+          return { ...b, yield: { ...b.yield, ranges: arr } }
+        })
+      }
+      onRemove={(i) =>
+        patchBlock((b) => ({
+          ...b,
+          yield: { ...b.yield, ranges: b.yield.ranges.filter((_, j) => j !== i) },
+        }))
+      }
+    />
+  )
+}
+
+export function ScaleEditor({
+  draft,
+  setDraft,
+  cultureTypeCode,
+}: {
+  draft: SaveSegmentationConfigurationDto
+  setDraft: SetDraft
+  cultureTypeCode: string
+}) {
+  const { block, patchBlock } = useCultureTypeEditor(draft, setDraft, cultureTypeCode)
+  return (
+    <RangeList
+      title="Scale"
+      hint={`${hints.yieldScale}\n\nSimulation uses only the latest crop season in the scope list.`}
+      labelBetween="Area BETWEEN"
+      ranges={block.scale.ranges}
+      onAdd={() =>
+        patchBlock((b) => ({
+          ...b,
+          scale: {
+            ...b.scale,
+            ranges: [...b.scale.ranges, { minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 0 }],
+          },
+        }))
+      }
+      onPatch={(i, part) =>
+        patchBlock((b) => {
+          const arr = [...b.scale.ranges]
+          arr[i] = { ...arr[i], ...part }
+          return { ...b, scale: { ...b.scale, ranges: arr } }
+        })
+      }
+      onRemove={(i) =>
+        patchBlock((b) => ({
+          ...b,
+          scale: { ...b.scale, ranges: b.scale.ranges.filter((_, j) => j !== i) },
+        }))
+      }
+    />
   )
 }

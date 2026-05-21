@@ -1,20 +1,20 @@
-import { useCallback, useEffect, useRef, useState, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as Tabs from '@radix-ui/react-tabs'
 import { apiGet, apiPatch, apiPost, apiPut, ApiRequestError } from '../api/client'
-import type { CultureTypeDto, SegmentationConfigurationDetailDto, SaveSegmentationConfigurationDto } from '../api/types'
+import type { SegmentationConfigurationDetailDto, SaveSegmentationConfigurationDto } from '../api/types'
 import { createDefaultConfiguration } from '../domain/defaultConfiguration'
 import { detailToSaveDto, bodyForSave, isOnlyConfigurationNameChange } from '../domain/configurationMapper'
 import { deriveKpiMaxScores } from '../domain/deriveKpiMax'
-import { syncRelevancesFromCaps } from '../domain/kpiRelevanceCaps'
-import { KpiTotalsBanner } from '../features/configuration/KpiTotalsBanner'
+import {
+  draftHasAllCatalogCultureTypes,
+  mergeCultureTypesFromCatalog,
+  normalizeCultureTypesCatalog,
+  type CultureTypeCatalogItem,
+} from '../domain/cultureTypeDraft'
+import { CultureTypePanel } from '../features/configuration/CultureTypePanel'
 import { SegmentsEditor } from '../features/configuration/SegmentsEditor'
-import { LoyaltyEditor } from '../features/configuration/LoyaltyEditor'
-import { QualityEditor } from '../features/configuration/QualityEditor'
-import { FinancialEditor } from '../features/configuration/FinancialEditor'
-import { EsgEditor, TechnologyEditor } from '../features/configuration/TechnologyEsgEditors'
-import { ScaleEditor, YieldEditor } from '../features/configuration/YieldScaleEditors'
 import { FieldLabel } from '../components/Hint'
 import { cn } from '../lib/cn'
 
@@ -26,24 +26,27 @@ export function ConfigurationEditorPage() {
   const [draft, setDraft] = useState<SaveSegmentationConfigurationDto>(() =>
     createDefaultConfiguration(),
   )
-  /** Edit mode: true only after server detail was applied to draft (avoids PUT with template segments missing ids). */
   const [draftHydratedFromServer, setDraftHydratedFromServer] = useState(isNew)
   const [saveError, setSaveError] = useState<string | null>(null)
-
-  const setDraftNormalized = useCallback(
-    (u: SetStateAction<SaveSegmentationConfigurationDto>) => {
-      setDraft((prev) => {
-        const next = typeof u === 'function' ? u(prev) : u
-        return syncRelevancesFromCaps(next)
-      })
-    },
-    [],
-  )
+  const [activeCultureCode, setActiveCultureCode] = useState('FCV')
 
   const cultureTypesQuery = useQuery({
     queryKey: ['cultureTypes'],
-    queryFn: () => apiGet<CultureTypeDto[]>('/api/CultureTypes'),
+    queryFn: async () =>
+      normalizeCultureTypesCatalog(await apiGet<unknown>('/api/CultureTypes')),
+    staleTime: 60_000,
   })
+
+  const catalogRef = useRef<CultureTypeCatalogItem[]>([])
+  catalogRef.current = cultureTypesQuery.data ?? []
+
+  const setDraftNormalized = useCallback((u: SetStateAction<SaveSegmentationConfigurationDto>) => {
+    setDraft((prev) => {
+      const next = typeof u === 'function' ? u(prev) : u
+      const catalog = catalogRef.current
+      return catalog.length > 0 ? mergeCultureTypesFromCatalog(next, catalog) : next
+    })
+  }, [])
 
   const detailQuery = useQuery({
     queryKey: ['config', id],
@@ -51,20 +54,39 @@ export function ConfigurationEditorPage() {
     queryFn: () => apiGet<SegmentationConfigurationDetailDto>(`/api/SegmentationConfigurations/${id!}`),
   })
 
-  /** Snapshot of last server save payload (for rename-only PATCH). */
   const baselineSaveDto = useRef<SaveSegmentationConfigurationDto | null>(null)
-
-  /** Avoid re-applying GET payload on every React Query refetch (would wipe unsaved edits). */
   const lastHydratedConfigId = useRef<string | null>(null)
+  const newConfigInitialized = useRef(false)
 
   useEffect(() => {
-    if (isNew) {
-      setDraftNormalized(createDefaultConfiguration())
-      setDraftHydratedFromServer(true)
-      lastHydratedConfigId.current = null
-      baselineSaveDto.current = null
+    const catalog = cultureTypesQuery.data
+    if (!catalog?.length) return
+    if (draftHasAllCatalogCultureTypes(draft, catalog)) return
+    setDraftNormalized((d) => d)
+  }, [cultureTypesQuery.data, draft.cultureTypes, setDraftNormalized])
+
+  useEffect(() => {
+    const codes = cultureTypesQuery.data?.map((c) => c.code) ?? []
+    if (codes.length > 0 && !codes.includes(activeCultureCode)) {
+      setActiveCultureCode(codes[0])
+    }
+  }, [cultureTypesQuery.data, activeCultureCode])
+
+  useEffect(() => {
+    if (!isNew) {
+      newConfigInitialized.current = false
       return
     }
+    if (newConfigInitialized.current) return
+    newConfigInitialized.current = true
+    setDraftNormalized(createDefaultConfiguration())
+    setDraftHydratedFromServer(true)
+    lastHydratedConfigId.current = null
+    baselineSaveDto.current = null
+  }, [isNew, setDraftNormalized])
+
+  useEffect(() => {
+    if (isNew) return
     const d = detailQuery.data
     if (!d || String(d.id) !== String(id)) {
       setDraftHydratedFromServer(false)
@@ -79,7 +101,9 @@ export function ConfigurationEditorPage() {
     baselineSaveDto.current = next
     setDraftHydratedFromServer(true)
     lastHydratedConfigId.current = String(id)
-  }, [isNew, id, detailQuery.data])
+    const tabCodes = cultureTypesQuery.data?.map((c) => c.code) ?? d.cultureTypes.map((c) => c.cultureTypeCode)
+    if (tabCodes.length > 0) setActiveCultureCode(tabCodes[0])
+  }, [isNew, id, detailQuery.data, setDraftNormalized, cultureTypesQuery.data])
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -129,6 +153,12 @@ export function ConfigurationEditorPage() {
     },
   })
 
+  const cultureTabCodes = useMemo(() => {
+    const fromCatalog = cultureTypesQuery.data?.map((c) => c.code) ?? []
+    if (fromCatalog.length > 0) return fromCatalog
+    return draft.cultureTypes.map((c) => c.cultureTypeCode)
+  }, [cultureTypesQuery.data, draft.cultureTypes])
+
   if (!isNew && detailQuery.isLoading) {
     return <p className="text-sm text-ink-muted">Loading configuration…</p>
   }
@@ -138,8 +168,9 @@ export function ConfigurationEditorPage() {
 
   const canSave =
     draftHydratedFromServer &&
-    deriveKpiMaxScores(draft).matchesMaximum &&
-    draft.segments.length > 0
+    draft.segments.length > 0 &&
+    draft.cultureTypes.length > 0 &&
+    draft.cultureTypes.every((ct) => deriveKpiMaxScores(ct).matchesMaximum)
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -160,37 +191,17 @@ export function ConfigurationEditorPage() {
         </button>
       </div>
 
-      <div className="flex max-w-xl flex-wrap items-end gap-4">
-        <label className="block flex-1 text-sm">
+      <section className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card space-y-6">
+        <label className="block max-w-xl text-sm">
           <FieldLabel label="Configuration name" hint="Shown in lists and simulation picker." />
           <input
             className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm"
             value={draft.name}
-            onChange={(e) =>
-              setDraftNormalized((d) => (d ? { ...d, name: e.target.value } : d))
-            }
+            onChange={(e) => setDraftNormalized((d) => ({ ...d, name: e.target.value }))}
           />
         </label>
-
-        <label className="block w-44 text-sm">
-          <FieldLabel label="Culture type" hint="Tobacco culture type for this configuration." />
-          <select
-            className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm"
-            value={draft.cultureTypeCode}
-            onChange={(e) =>
-              setDraftNormalized((d) => ({ ...d, cultureTypeCode: e.target.value }))
-            }
-          >
-            {cultureTypesQuery.data?.map((ct) => (
-              <option key={ct.code} value={ct.code}>
-                {ct.code} – {ct.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-        <KpiTotalsBanner draft={draft} setDraft={setDraftNormalized} />
+        <SegmentsEditor draft={draft} setDraft={setDraftNormalized} />
+      </section>
 
       {saveError && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
@@ -198,66 +209,44 @@ export function ConfigurationEditorPage() {
         </div>
       )}
 
-      <Tabs.Root defaultValue="overview" className="space-y-4">
-        <Tabs.List className="flex flex-wrap gap-1 rounded-xl border border-black/5 bg-surface-card p-1">
-          {[
-            ['overview', 'Overview'],
-            ['loyalty', 'Loyalty'],
-            ['quality', 'Quality'],
-            ['financial', 'Financial'],
-            ['technology', 'Technology'],
-            ['esg', 'ESG'],
-            ['yield', 'Yield'],
-            ['scale', 'Scale'],
-          ].map(([value, label]) => (
-            <Tabs.Trigger
-              key={value}
-              value={value}
-              className="rounded-lg px-3 py-2 text-sm font-medium data-[state=active]:bg-leaf data-[state=active]:text-white data-[state=inactive]:text-ink-muted data-[state=inactive]:hover:bg-surface-muted"
-            >
-              {label}
-            </Tabs.Trigger>
+      {cultureTypesQuery.isError && (
+        <p className="text-sm text-amber-800">
+          Could not load culture types from the API. Only culture types already in this configuration are shown.
+        </p>
+      )}
+
+      {cultureTabCodes.length > 0 && (
+        <Tabs.Root value={activeCultureCode} onValueChange={setActiveCultureCode} className="space-y-4">
+          <Tabs.List className="flex flex-wrap gap-1 rounded-xl border border-black/5 bg-surface-card p-1">
+            {cultureTabCodes.map((code) => (
+              <Tabs.Trigger
+                key={code}
+                value={code}
+                className={cn(
+                  'rounded-lg px-4 py-2 text-sm font-semibold',
+                  'data-[state=active]:bg-leaf data-[state=active]:text-white',
+                  'data-[state=inactive]:text-ink-muted data-[state=inactive]:hover:bg-surface-muted',
+                )}
+              >
+                {code}
+              </Tabs.Trigger>
+            ))}
+          </Tabs.List>
+          {cultureTabCodes.map((code) => (
+            <Tabs.Content key={code} value={code} className="outline-none">
+              {draft.cultureTypes.some((c) => c.cultureTypeCode === code) ? (
+                <CultureTypePanel
+                  draft={draft}
+                  setDraft={setDraftNormalized}
+                  cultureTypeCode={code}
+                />
+              ) : (
+                <p className="text-sm text-ink-muted">Preparing {code} settings…</p>
+              )}
+            </Tabs.Content>
           ))}
-        </Tabs.List>
-        <Tabs.Content value="overview" className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card outline-none">
-          <SegmentsEditor draft={draft} setDraft={setDraftNormalized} />
-        </Tabs.Content>
-        <Tabs.Content value="loyalty" className="outline-none">
-          <div className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card">
-            <LoyaltyEditor draft={draft} setDraft={setDraftNormalized} />
-          </div>
-        </Tabs.Content>
-        <Tabs.Content value="quality" className="outline-none">
-          <div className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card">
-            <QualityEditor draft={draft} setDraft={setDraftNormalized} />
-          </div>
-        </Tabs.Content>
-        <Tabs.Content value="financial" className="outline-none">
-          <div className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card">
-            <FinancialEditor draft={draft} setDraft={setDraftNormalized} />
-          </div>
-        </Tabs.Content>
-        <Tabs.Content value="technology" className="outline-none">
-          <div className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card">
-            <TechnologyEditor draft={draft} setDraft={setDraftNormalized} />
-          </div>
-        </Tabs.Content>
-        <Tabs.Content value="esg" className="outline-none">
-          <div className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card">
-            <EsgEditor draft={draft} setDraft={setDraftNormalized} />
-          </div>
-        </Tabs.Content>
-        <Tabs.Content value="yield" className="outline-none">
-          <div className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card">
-            <YieldEditor draft={draft} setDraft={setDraftNormalized} />
-          </div>
-        </Tabs.Content>
-        <Tabs.Content value="scale" className="outline-none">
-          <div className="rounded-xl border border-black/5 bg-surface-card p-6 shadow-card">
-            <ScaleEditor draft={draft} setDraft={setDraftNormalized} />
-          </div>
-        </Tabs.Content>
-      </Tabs.Root>
+        </Tabs.Root>
+      )}
     </div>
   )
 }

@@ -152,7 +152,8 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         var mulch = GetRequiredBool(csv, "haslargebaseridgewithmulch");
         var furnace = GetRequiredBool(csv, "hasbroadgratefurnace");
         var pkg = GetRequiredBool(csv, "hastechnologypackageadherence");
-        return new TechnologiesParsed(farmerCode, cropSeasonId, cultureType, mulch, furnace, pkg);
+        var barn = GetOptionalBool(csv, "hasstandardbarn") ?? false;
+        return new TechnologiesParsed(farmerCode, cropSeasonId, cultureType, mulch, furnace, pkg, barn);
     }
 
     private static EsgParsed ParseEsgRow(CsvReader csv)
@@ -336,7 +337,8 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
                 CultureTypeCode = row.CultureTypeCode,
                 HasLargeBaseRidgeWithMulch = row.HasLargeBaseRidgeWithMulch,
                 HasBroadGrateFurnace = row.HasBroadGrateFurnace,
-                HasTechnologyPackageAdherence = row.HasTechnologyPackageAdherence
+                HasTechnologyPackageAdherence = row.HasTechnologyPackageAdherence,
+                HasStandardBarn = row.HasStandardBarn
             });
             await db.SaveChangesAsync(cancellationToken);
             return (true, false, null);
@@ -345,8 +347,28 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
         existing.HasLargeBaseRidgeWithMulch = row.HasLargeBaseRidgeWithMulch;
         existing.HasBroadGrateFurnace = row.HasBroadGrateFurnace;
         existing.HasTechnologyPackageAdherence = row.HasTechnologyPackageAdherence;
+        existing.HasStandardBarn = row.HasStandardBarn;
         await db.SaveChangesAsync(cancellationToken);
         return (false, true, null);
+    }
+
+    private static bool? GetOptionalBool(CsvReader csv, string normalizedName)
+    {
+        try
+        {
+            var raw = csv.GetField(normalizedName);
+            if (string.IsNullOrWhiteSpace(raw))
+                return null;
+            if (bool.TryParse(raw, out var b))
+                return b;
+            if (raw == "1") return true;
+            if (raw == "0") return false;
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task<(bool Inserted, bool Updated, KpiImportErrorDto? Error)> UpsertEsgAsync(EsgParsed row, CancellationToken cancellationToken)
@@ -455,6 +477,6 @@ public sealed class KpiImportService(AppDbContext db) : IKpiImportService
     private sealed record FinancialParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int SelfFundingPercentage, bool HaveDebt);
     private sealed record YieldParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int Yield);
     private sealed record ScaleParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int Scale);
-    private sealed record TechnologiesParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, bool HasLargeBaseRidgeWithMulch, bool HasBroadGrateFurnace, bool HasTechnologyPackageAdherence);
+    private sealed record TechnologiesParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, bool HasLargeBaseRidgeWithMulch, bool HasBroadGrateFurnace, bool HasTechnologyPackageAdherence, bool HasStandardBarn);
     private sealed record EsgParsed(string FarmerCode, int CropSeasonId, string CultureTypeCode, int ReforestationPercentage, int NativeForestPercentage, bool HasMinorIrregularity, bool HasMajorIrregularity);
 }

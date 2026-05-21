@@ -9,330 +9,318 @@ public readonly record struct FarmerSimulationScores(
     int Technologies,
     int Esg,
     int Yield,
-    int Scale)
+    int Scale,
+    int YieldAndScale)
 {
-    public int Total => Loyalty + Quality + Financial + Technologies + Esg + Yield + Scale;
+    public int Total => Loyalty + Quality + Financial + Technologies + Esg + Yield + Scale + YieldAndScale;
 }
 
+/// <summary>
+/// Scores farmers from KPI history, simulation scope seasons, and culture-type configuration rules.
+/// See <c>docs/SIMULATION_SCORING.md</c>.
+/// </summary>
 public static class SimulationFarmerScoring
 {
-    /// <summary>
-    /// Computes KPI component scores for one farmer using only KPI history and rule rows in
-    /// <paramref name="configuration"/>. Calendar seasons come from each rule (e.g. <c>CropSeasonStart</c> on ranges,
-    /// or the season fields on technology/ESG). The simulation's crop season is <strong>not</strong> used here—it is
-    /// only stored with the simulation for reporting and <see cref="FarmerSegmentation"/> by season.
-    /// </summary>
     public static FarmerSimulationScores ComputeScores(
-        SegmentationConfiguration configuration,
+        CultureTypeScoringBundle bundle,
+        SimulationScoringContext context,
         FarmerKpiHistory history)
     {
-        var loyalty = configuration.Loyalty is null ? 0 : ScoreLoyalty(configuration.Loyalty, history);
-        var quality = configuration.Quality is null ? 0 : ScoreQuality(configuration.Quality, history);
-        var financial = configuration.Financial is null ? 0 : ScoreFinancial(configuration.Financial, history);
-        var technology = configuration.Technology is null ? 0 : ScoreTechnology(configuration.Technology, history);
-        var esg = configuration.Esg is null ? 0 : ScoreEsg(configuration.Esg, history);
-        var yield = configuration.Yield is null ? 0 : ScoreYield(configuration.Yield, history);
-        var scale = configuration.Scale is null ? 0 : ScoreScale(configuration.Scale, history);
-
-        return new FarmerSimulationScores(loyalty, quality, financial, technology, esg, yield, scale);
+        return new FarmerSimulationScores(
+            ScoreLoyalty(bundle.Loyalty, context, history),
+            ScoreQuality(bundle.Quality, context, history),
+            ScoreFinancial(bundle.Financial, context, history),
+            ScoreTechnology(bundle.Technology, context, history),
+            ScoreEsg(bundle.Esg, context, history),
+            ScoreYield(bundle.Yield, context, history),
+            ScoreScale(bundle.Scale, context, history),
+            ScoreYieldAndScale(bundle.YieldAndScale, context, history));
     }
 
-    /// <summary>
-    /// Assigns a segment by comparing <paramref name="totalScore"/> to each segment's <c>RangeMin</c> (highest threshold first).
-    /// <c>RangeMin</c> may be negative when scoring rules produce negative totals; the check is <c>totalScore &gt;= RangeMin</c>.
-    /// </summary>
     public static SegmentationSegment? PickSegment(
-        IEnumerable<SegmentationSegment> segments,
+        IEnumerable<SegmentThreshold> thresholds,
+        IEnumerable<SegmentationSegment> headerSegments,
         int totalScore,
         bool nonExclusiveFarmer)
     {
-        foreach (var seg in segments
-                     .Where(s => s.RangeMin.HasValue)
-                     .OrderByDescending(s => s.RangeMin!.Value))
+        var headerById = headerSegments.ToDictionary(s => s.Id);
+
+        foreach (var t in thresholds
+                     .Where(t => t.RangeMin.HasValue)
+                     .OrderByDescending(t => t.RangeMin!.Value))
         {
-            if (seg.OnlyExclusiveFarmer && nonExclusiveFarmer)
+            if (t.OnlyExclusiveFarmer && nonExclusiveFarmer)
                 continue;
-            if (totalScore >= seg.RangeMin!.Value)
+            if (totalScore >= t.RangeMin!.Value && headerById.TryGetValue(t.SegmentId, out var seg))
                 return seg;
         }
 
-        foreach (var seg in segments.Where(s => !s.RangeMin.HasValue))
+        foreach (var t in thresholds.Where(t => !t.RangeMin.HasValue))
         {
-            if (seg.OnlyExclusiveFarmer && nonExclusiveFarmer)
+            if (t.OnlyExclusiveFarmer && nonExclusiveFarmer)
                 continue;
-            return seg;
+            if (headerById.TryGetValue(t.SegmentId, out var seg))
+                return seg;
         }
 
-        return segments.FirstOrDefault(s => !(s.OnlyExclusiveFarmer && nonExclusiveFarmer));
+        return headerSegments.FirstOrDefault(s => !(s.OnlyExclusiveFarmer && nonExclusiveFarmer));
     }
 
-    public static IReadOnlyDictionary<Guid, int> CompetitionRanks(IReadOnlyList<(Guid FarmerId, int TotalScore)> rows)
+    private static int ScoreLoyalty(
+        SegmentationConfigurationLoyalty loyalty,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
     {
-        var dict = new Dictionary<Guid, int>(rows.Count);
-        foreach (var (farmerId, total) in rows)
-        {
-            var higher = rows.Count(x => x.TotalScore > total);
-            dict[farmerId] = higher + 1;
-        }
-
-        return dict;
-    }
-
-    private static int ScoreLoyalty(SegmentationConfigurationLoyalty loyalty, FarmerKpiHistory history)
-    {
-        var best = int.MinValue;
-        var any = false;
+        var selected = context.ScopeCropSeasonIdsDescending;
+        if (selected.Count == 0)
+            return 0;
 
         if (loyalty.SeasonQuantityRanges.Count == 0)
         {
-            foreach (var delivered in history.LoyaltyDeliveredPctBySeason.Values)
+            var bestHist = int.MinValue;
+            var anyHist = false;
+            foreach (var season in selected)
             {
+                if (!history.LoyaltyDeliveredPctBySeason.TryGetValue(season, out var delivered))
+                    continue;
                 foreach (var h in loyalty.HistoricalVolumeRanges)
                 {
                     if (delivered < h.MinimumDeliveryAmount || delivered > h.MaximumDeliveryAmount)
                         continue;
-                    any = true;
-                    best = Math.Max(best, h.Score);
+                    anyHist = true;
+                    bestHist = Math.Max(bestHist, h.Score);
                 }
             }
-        }
-        else
-        {
-            foreach (var r in loyalty.SeasonQuantityRanges)
-            {
-                var anchor = r.CropSeasonStart;
-                if (history.LoyaltyDeliveredPctBySeason.TryGetValue(anchor, out var deliveredAtAnchor))
-                {
-                    foreach (var h in loyalty.HistoricalVolumeRanges)
-                    {
-                        if (deliveredAtAnchor < h.MinimumDeliveryAmount || deliveredAtAnchor > h.MaximumDeliveryAmount)
-                            continue;
-                        any = true;
-                        best = Math.Max(best, h.Score);
-                    }
-                }
 
-                var skipped = r.SkippedCropSeasons.Select(s => s.CropSeasonId).ToHashSet();
-                var plantingFrom = anchor - r.PlantingCropSeasonAmount + 1;
-                var plantingSeasonsWithData = 0;
-                for (var season = plantingFrom; season <= anchor; season++)
-                {
-                    if (skipped.Contains(season))
-                        continue;
-                    if (history.LoyaltyDeliveredPctBySeason.ContainsKey(season))
-                        plantingSeasonsWithData++;
-                }
-
-                if (plantingSeasonsWithData < r.PlantingCropSeasonAmount)
-                    continue;
-
-                if (!WindowValuesSatisfied(
-                        anchor,
-                        r.DeliveryCropSeasonAmount,
-                        skipped,
-                        season => history.LoyaltyDeliveredPctBySeason.TryGetValue(season, out var v)
-                                  && v >= r.MinimumDeliveryAmount
-                                  && v <= r.MaximumDeliveryAmount))
-                    continue;
-
-                any = true;
-                best = Math.Max(best, r.Score);
-            }
+            return anyHist ? bestHist : 0;
         }
 
-        return any ? best : 0;
-    }
-
-    private static int ScoreQuality(SegmentationConfigurationQuality quality, FarmerKpiHistory history)
-    {
-        var best = int.MinValue;
-        var any = false;
-
-        foreach (var r in quality.IqsRanges)
+        var matching = new List<LoyaltySeasonQuantityRange>();
+        foreach (var r in loyalty.SeasonQuantityRanges)
         {
-            var anchor = r.CropSeasonStart;
-            if (!WindowValuesSatisfied(
-                    anchor,
-                    r.CropSeasonAmount,
-                    r.SkippedCropSeasons.Select(s => s.CropSeasonId).ToHashSet(),
+            var plantingSeasonsWithData = selected.Count(season =>
+                history.LoyaltyDeliveredPctBySeason.ContainsKey(season));
+
+            if (plantingSeasonsWithData < r.PlantingCropSeasonAmount)
+                continue;
+
+            if (!DeliveryWindowSatisfied(
+                    selected,
+                    r.DeliveryCropSeasonAmount,
                     season =>
                     {
-                        if (!history.QualityBySeason.TryGetValue(season, out var q))
+                        if (!history.LoyaltyDeliveredPctBySeason.TryGetValue(season, out var v))
                             return false;
-                        return q.Iqs >= r.Minimum && q.Iqs <= r.Maximum;
+                        return v >= r.MinimumDeliveryAmount && v <= r.MaximumDeliveryAmount;
                     }))
                 continue;
 
-            any = true;
-            best = Math.Max(best, r.Score);
+            matching.Add(r);
         }
 
-        var score = any ? best : 0;
+        if (matching.Count == 0)
+            return 0;
 
-        var iqAnchor = quality.IqsRanges.Count == 0 ? 0 : quality.IqsRanges.Max(x => x.CropSeasonStart);
-        if (iqAnchor > 0 && history.QualityBySeason.TryGetValue(iqAnchor, out var current))
+        return matching.OrderByDescending(r => r.PlantingCropSeasonAmount).First().Score;
+    }
+
+    private static int ScoreQuality(
+        SegmentationConfigurationQuality quality,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
+    {
+        var season = context.LatestScopeCropSeasonId;
+        var score = 0;
+
+        if (history.QualityBySeason.TryGetValue(season, out var current))
         {
-            if (iqAnchor >= quality.NtrmCropSeasonStart && current.HadNtrm)
+            foreach (var r in quality.IqsRanges)
+            {
+                if (current.Iqs >= r.Minimum && current.Iqs <= r.Maximum)
+                {
+                    score = r.Score;
+                    break;
+                }
+            }
+
+            if (current.HadNtrm)
                 score += quality.NtrmScore;
-            if (iqAnchor >= quality.MixtureCropSeasonStart && current.HadQualityMixture)
+            if (current.HadQualityMixture)
                 score += quality.MixtureScore;
         }
 
         return score;
     }
 
-    private static int ScoreFinancial(SegmentationConfigurationFinancial financial, FarmerKpiHistory history)
+    private static int ScoreFinancial(
+        SegmentationConfigurationFinancial financial,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
     {
-        var best = int.MinValue;
-        var any = false;
+        var season = context.LatestScopeCropSeasonId;
+        if (!history.FinancialBySeason.TryGetValue(season, out var cur))
+            return 0;
 
+        var score = 0;
         foreach (var r in financial.SelfFundingRanges)
         {
-            var anchor = r.CropSeasonStart;
-            if (!WindowValuesSatisfied(
-                    anchor,
-                    r.CropSeasonAmount,
-                    r.SkippedCropSeasons.Select(s => s.CropSeasonId).ToHashSet(),
-                    season =>
-                    {
-                        if (!history.FinancialBySeason.TryGetValue(season, out var f))
-                            return false;
-                        return f.SelfFundingPercentage >= r.Minimum && f.SelfFundingPercentage <= r.Maximum;
-                    }))
-                continue;
-
-            any = true;
-            best = Math.Max(best, r.Score);
+            if (cur.SelfFundingPercentage >= r.Minimum && cur.SelfFundingPercentage <= r.Maximum)
+            {
+                score = r.Score;
+                break;
+            }
         }
 
-        var score = any ? best : 0;
-
-        var finAnchor = financial.SelfFundingRanges.Count == 0
-            ? 0
-            : financial.SelfFundingRanges.Max(x => x.CropSeasonStart);
-        if (finAnchor > 0
-            && history.FinancialBySeason.TryGetValue(finAnchor, out var cur)
-            && cur.HaveDebt
-            && finAnchor >= financial.DebtCropSeason)
+        if (cur.HaveDebt)
             score += financial.DebtScore;
 
         return score;
     }
 
-    private static int ScoreTechnology(SegmentationConfigurationTechnology technology, FarmerKpiHistory history)
+    private static int ScoreTechnology(
+        SegmentationConfigurationTechnology technology,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
     {
         var sum = 0;
+        var season = context.LatestScopeCropSeasonId;
 
-        if (history.TechnologiesBySeason.TryGetValue(technology.HasLargeBaseRidgeWithMulchCropSeason, out var tMulch)
-            && tMulch.HasLargeBaseRidgeWithMulch)
+        if (!history.TechnologiesBySeason.TryGetValue(season, out var t))
+            return 0;
+
+        if (t.HasLargeBaseRidgeWithMulch)
             sum += technology.HasLargeBaseRidgeWithMulchScore;
-
-        if (history.TechnologiesBySeason.TryGetValue(technology.HasBroadGrateFurnaceCropSeason, out var tFurnace)
-            && tFurnace.HasBroadGrateFurnace)
+        if (t.HasBroadGrateFurnace)
             sum += technology.HasBroadGrateFurnaceScore;
-
-        if (history.TechnologiesBySeason.TryGetValue(technology.HasTechnologyPackageAdherenceCropSeason, out var tPkg)
-            && tPkg.HasTechnologyPackageAdherence)
+        if (t.HasTechnologyPackageAdherence)
             sum += technology.HasTechnologyPackageAdherenceScore;
+        if (t.HasStandardBarn)
+            sum += technology.HasStandardBarnScore;
 
         return sum;
     }
 
-    private static int ScoreEsg(SegmentationConfigurationEsg esg, FarmerKpiHistory history)
+    private static int ScoreEsg(
+        SegmentationConfigurationEsg esg,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
     {
         var score = 0;
+        var season = context.LatestScopeCropSeasonId;
 
-        if (history.EsgBySeason.TryGetValue(esg.ReforestationCropSeason, out var kr))
+        if (history.EsgBySeason.TryGetValue(season, out var kr))
         {
             var add = kr.ReforestationPercentage * esg.ReforestationScorePerPercentualPoint;
             score += Math.Clamp(add, 0, esg.ReforestationMaximumScore);
         }
 
-        if (history.EsgBySeason.TryGetValue(esg.NativeForestCropSeason, out var kn))
+        if (history.EsgBySeason.TryGetValue(season, out var kn))
         {
             var add = kn.NativeForestPercentage * esg.NativeForestScorePerPercentualPoint;
             score += Math.Clamp(add, 0, esg.NativeForestMaximumScore);
         }
 
-        if (history.EsgBySeason.TryGetValue(esg.MinorIrregularityCropSeason, out var km) && km.HasMinorIrregularity)
+        if (history.EsgBySeason.TryGetValue(season, out var km) && km.HasMinorIrregularity)
             score += esg.MinorIrregularityScore;
-        if (history.EsgBySeason.TryGetValue(esg.MajorIrregularityCropSeason, out var kM) && kM.HasMajorIrregularity)
+        if (history.EsgBySeason.TryGetValue(season, out var kM) && kM.HasMajorIrregularity)
             score += esg.MajorIrregularityScore;
 
         return score;
     }
 
-    private static int ScoreYield(SegmentationConfigurationYield yield, FarmerKpiHistory history)
+    private static int ScoreYield(
+        SegmentationConfigurationYield yield,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
     {
-        var best = int.MinValue;
-        var any = false;
+        var season = context.LatestScopeCropSeasonId;
+        if (!history.YieldBySeason.TryGetValue(season, out var y))
+            return 0;
 
         foreach (var r in yield.Ranges)
         {
-            var anchor = r.CropSeasonStart;
-            if (!WindowValuesSatisfied(
-                    anchor,
-                    r.CropSeasonAmount,
-                    r.SkippedCropSeasons.Select(s => s.CropSeasonId).ToHashSet(),
-                    season =>
-                    {
-                        if (!history.YieldBySeason.TryGetValue(season, out var y))
-                            return false;
-                        return y >= r.Minimum && y <= r.Maximum;
-                    }))
-                continue;
-
-            any = true;
-            best = Math.Max(best, r.Score);
+            if (y >= r.Minimum && y <= r.Maximum)
+                return r.Score;
         }
 
-        return any ? best : 0;
+        return 0;
     }
 
-    private static int ScoreScale(SegmentationConfigurationScale scale, FarmerKpiHistory history)
+    private static int ScoreScale(
+        SegmentationConfigurationScale scale,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
     {
-        var best = int.MinValue;
-        var any = false;
+        var season = context.LatestScopeCropSeasonId;
+        if (!history.ScaleBySeason.TryGetValue(season, out var s))
+            return 0;
 
         foreach (var r in scale.Ranges)
         {
-            var anchor = r.CropSeasonStart;
-            if (!WindowValuesSatisfied(
-                    anchor,
-                    r.CropSeasonAmount,
-                    r.SkippedCropSeasons.Select(s => s.CropSeasonId).ToHashSet(),
-                    season =>
-                    {
-                        if (!history.ScaleBySeason.TryGetValue(season, out var s))
-                            return false;
-                        return s >= r.Minimum && s <= r.Maximum;
-                    }))
-                continue;
-
-            any = true;
-            best = Math.Max(best, r.Score);
+            if (s >= r.Minimum && s <= r.Maximum)
+                return r.Score;
         }
 
-        return any ? best : 0;
+        return 0;
+    }
+
+    private static int ScoreYieldAndScale(
+        SegmentationConfigurationYieldAndScale yieldAndScale,
+        SimulationScoringContext context,
+        FarmerKpiHistory history)
+    {
+        var selected = context.ScopeCropSeasonIdsDescending;
+        if (selected.Count == 0 || yieldAndScale.Ranges.Count == 0)
+            return 0;
+
+        var seasonsWithYieldAndScale = selected
+            .Where(s => history.YieldBySeason.ContainsKey(s) && history.ScaleBySeason.ContainsKey(s))
+            .ToList();
+
+        var plantingSeasonsWithData = seasonsWithYieldAndScale.Count;
+        if (plantingSeasonsWithData == 0)
+            return 0;
+
+        var matching = new List<YieldAndScaleRange>();
+        foreach (var r in yieldAndScale.Ranges)
+        {
+            if (plantingSeasonsWithData < r.YieldAndScaleCropSeasonAmount)
+                continue;
+
+            var avgYield = (int)Math.Round(seasonsWithYieldAndScale.Average(s => history.YieldBySeason[s]));
+            var avgModule = Math.Round(
+                seasonsWithYieldAndScale.Average(s => (decimal)history.ScaleBySeason[s]),
+                1,
+                MidpointRounding.AwayFromZero);
+
+            if (avgYield < r.MinimumYield || avgYield > r.MaximumYield)
+                continue;
+            if (avgModule < r.MinimumModule || avgModule > r.MaximumModule)
+                continue;
+
+            matching.Add(r);
+        }
+
+        if (matching.Count == 0)
+            return 0;
+
+        return matching.OrderByDescending(r => r.YieldAndScaleCropSeasonAmount).First().Score;
     }
 
     /// <summary>
-    /// Every season in <c>[anchorSeason - cropSeasonAmount + 1, anchorSeason]</c> (excluding skipped ids) must satisfy <paramref name="predicate"/>.
+    /// The <paramref name="cropSeasonAmount"/> most recent seasons in <paramref name="selectedSeasonsDescending"/>
+    /// must all satisfy <paramref name="predicate"/> (loyalty only).
     /// </summary>
-    private static bool WindowValuesSatisfied(
-        int anchorSeason,
+    private static bool DeliveryWindowSatisfied(
+        IReadOnlyList<int> selectedSeasonsDescending,
         int cropSeasonAmount,
-        HashSet<int> skippedSeasons,
         Func<int, bool> predicate)
     {
-        if (cropSeasonAmount <= 0)
+        if (cropSeasonAmount <= 0 || selectedSeasonsDescending.Count < cropSeasonAmount)
             return false;
 
-        var from = anchorSeason - cropSeasonAmount + 1;
-        for (var season = from; season <= anchorSeason; season++)
+        foreach (var season in selectedSeasonsDescending.Take(cropSeasonAmount))
         {
-            if (skippedSeasons.Contains(season))
-                continue;
             if (!predicate(season))
                 return false;
         }

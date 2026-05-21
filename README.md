@@ -45,7 +45,7 @@ Base path: `/api`
 
 | Area | Method | Route | Notes |
 |------|--------|-------|--------|
-| Crop seasons | GET | `/CropSeasons` | List seasons (ids are explicit years, e.g. 2024–2027) |
+| Crop seasons | GET | `/CropSeasons` | List seasons (ids are explicit years, e.g. 2023–2027) |
 | Farmers | GET | `/Farmers?cropSeasonId=` | List all farmers with optional official segmentation for the season |
 | Farmers | GET | `/Farmers/{farmerId}?cropSeasonId=` | Detail + KPIs for season + official segmentation if any |
 | Farmers | GET | `/Farmers/by-code/{farmerCode}?cropSeasonId=` | Same as above by farmer code |
@@ -57,8 +57,8 @@ Base path: `/api`
 | Configurations | PUT | `/SegmentationConfigurations/{id}` | Replace graph; existing **segments must include `id`** in the payload (new segments may omit `id`) |
 | Configurations | POST | `/SegmentationConfigurations/{id}/duplicate` | Optional body `{ "name": "..." }`; copies rules under a new id |
 | Simulations | GET | `/SegmentationSimulations?cropSeasonId=` | Optional filter |
-| Simulations | GET | `/SegmentationSimulations/{id}` | Detail + per-farmer scores, segment assignment, rank |
-| Simulations | POST | `/SegmentationSimulations` | Body: `{ "segmentationConfigurationId", "cropSeasonId" }` — scores **all** farmers from KPI history using **only calendar seasons defined in the configuration**; `cropSeasonId` is stored on the simulation and used when accepting as official for `FarmerSegmentation` for that season; status **`S`** |
+| Simulations | GET | `/SegmentationSimulations/{id}` | Detail + per-farmer scores, segment assignment, culture type used |
+| Simulations | POST | `/SegmentationSimulations` | Body: `{ "segmentationConfigurationId", "cropSeasonId", "scopeCropSeasonIds": [2026,2025,...] }` — `cropSeasonId` is the **target** season (official snapshot + point-in-time KPIs); `scopeCropSeasonIds` is the scoring window for multi-season rules; status **`S`** |
 | Simulations | POST | `/SegmentationSimulations/{id}/accept-official` | Transaction: marks simulation **`O`**, demotes other **`O`** for the same season to **`S`**, replaces `FarmerSegmentation` rows for that season |
 
 ### CSV import columns
@@ -81,24 +81,28 @@ Import response: `totalRows`, `insertedRows`, `updatedRows`, `errors[]` with `ro
 
 ### Segmentation configuration validation
 
-On create/update the API derives each KPI block’s **`MaxScore`** from its rules, then requires:
+On create/update the API derives each KPI block’s **`MaxScore`** per **culture type** and requires, for every `SegmentationConfigurationCultureType`:
 
-**`Loyalty.MaxScore + Quality.MaxScore + Financial.MaxScore + Technology.MaxScore + Esg.MaxScore + Yield.MaxScore + Scale.MaxScore === MaximumScore`**
+**`Loyalty.MaxScore + … + Scale.MaxScore + YieldAndScale.MaxScore === CultureType.MaximumScore`**
+
+Configurations are **crop-season-agnostic** (no `CropSeasonStart` / skipped seasons on rules). See `docs/SIMULATION_SCORING.md`.
 
 Derived rules (server-side, see `Segmentation.Domain/SegmentationConfigurationKpiMaxScores.cs`):
 
 - **Loyalty:** max positive `Score` among season-quantity ranges **plus** max positive `Score` among historical volume ranges (two independent maxima, then summed).
 - **Quality / Financial / Yield / Scale:** max `Score` among their range rows (or 0 if no ranges).
+- **Yield & Scale (optional combined block):** max **positive** `Score` among combined ranges (farmer matches at most one range).
 - **Technology:** sum of the three technology **scores** where the configured value is **positive** (zero or negative contributions are ignored in the sum).
 - **ESG:** `ReforestationMaximumScore + NativeForestMaximumScore` (caps for the two percentage ladders; irregularity scores are not part of this derived cap in the current model).
 
 ### Simulation scoring (high level)
 
-When you **POST** a simulation, the engine loads the configuration and each farmer’s KPI history **across all seasons present in the database**. **Scoring does not use the simulation’s `cropSeasonId` as a math anchor**: each rule row carries its own anchor (e.g. `CropSeasonStart` on loyalty / IQS / self-funding / yield / scale ranges). Technology and ESG read the farmer’s KPI row at the **crop season id stored on each configuration field** (e.g. `HasLargeBaseRidgeWithMulchCropSeason`, `ReforestationCropSeason`). The simulation’s **`cropSeasonId`** is only persisted with the run and used when you **accept as official** to attach `FarmerSegmentation` rows to that season. See `Segmentation.Domain/Scoring/SimulationFarmerScoring.cs`.
+See **`docs/SIMULATION_SCORING.md`** for full rules (scope seasons, loyalty precedence, culture-type choice).
 
-- **Total score** is the sum of the seven KPI component scores stored on `SegmentationSimulationFarmer`.
-- **Rank** uses **competition ranking**: `rank = 1 +` count of farmers with **strictly greater** total score (ties share the same rank, e.g. 1, 1, 1, 4).
-- **Segment** is chosen from configuration segments using **`RangeMin`** (highest threshold not exceeding total score, respecting **`OnlyExclusiveFarmer`**), then segments without `RangeMin` as fallback.
+- One **header** configuration holds shared segment definitions; each **culture type** has its own KPI rules, `MaximumScore`, and per-segment **`RangeMin`** thresholds.
+- **POST** body includes **`scopeCropSeasonIds`** (multi-season window) and **`cropSeasonId`** (target season for official snapshot and point-in-time KPIs).
+- Each farmer is scored with the culture type that has the **largest total Scale** in scope seasons (among types configured).
+- **No ranking** between farmers (scores are still stored). **Segment** uses culture-type `RangeMin` thresholds.
 
 ### OpenAPI
 

@@ -29,6 +29,8 @@ public class FarmerSegmentation
 
     public int ScaleScore { get; set; }
 
+    public int YieldAndScaleScore { get; set; }
+
     public bool NonExclusiveFarmer { get; set; }
 
     public Guid? SegmentationConfigurationSegmentId { get; set; }

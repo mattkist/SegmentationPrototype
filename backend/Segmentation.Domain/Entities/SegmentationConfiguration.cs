@@ -6,18 +6,8 @@ public class SegmentationConfiguration
 
     public required string Name { get; set; }
 
-    public int MaximumScore { get; set; }
-
-    public required string CultureTypeCode { get; set; }
-    public CultureType CultureType { get; set; } = null!;
-
     public ICollection<SegmentationSegment> Segments { get; set; } = new List<SegmentationSegment>();
-    public SegmentationConfigurationLoyalty? Loyalty { get; set; }
-    public SegmentationConfigurationQuality? Quality { get; set; }
-    public SegmentationConfigurationFinancial? Financial { get; set; }
-    public SegmentationConfigurationTechnology? Technology { get; set; }
-    public SegmentationConfigurationEsg? Esg { get; set; }
-    public SegmentationConfigurationYield? Yield { get; set; }
-    public SegmentationConfigurationScale? Scale { get; set; }
+    public ICollection<SegmentationConfigurationCultureType> CultureTypes { get; set; } =
+        new List<SegmentationConfigurationCultureType>();
     public ICollection<SegmentationSimulation> Simulations { get; set; } = new List<SegmentationSimulation>();
 }

@@ -1,7 +1,7 @@
 namespace Segmentation.Domain.Entities;
 
 /// <summary>
-/// Named segment (e.g. Diamond, Gold) with score threshold and commercial discounts.
+/// Named segment (e.g. Diamond, Gold) with commercial discounts. Score thresholds are per culture type.
 /// </summary>
 public class SegmentationSegment
 {
@@ -12,14 +12,14 @@ public class SegmentationSegment
 
     public required string SegmentName { get; set; }
 
-    public int? RangeMin { get; set; }
-
     public bool OnlyExclusiveFarmer { get; set; }
 
     public int BankDepositDiscount { get; set; }
 
     public int TobaccoDiscount { get; set; }
 
+    public ICollection<SegmentationConfigurationCultureTypeSegment> CultureTypeSegments { get; set; } =
+        new List<SegmentationConfigurationCultureTypeSegment>();
     public ICollection<SegmentationSimulationFarmer> SimulationFarmers { get; set; } = new List<SegmentationSimulationFarmer>();
     public ICollection<FarmerSegmentation> FarmerSegmentations { get; set; } = new List<FarmerSegmentation>();
 }

@@ -21,7 +21,8 @@ public sealed record OfficialSegmentationDto(
     int TechnologiesScore,
     int EsgScore,
     int YieldScore,
-    int ScaleScore);
+    int ScaleScore,
+    int YieldAndScaleScore);
 
 public sealed record FarmerKpisForSeasonDto(
     LoyaltyKpiRowDto? Loyalty,

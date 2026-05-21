@@ -192,6 +192,17 @@ export function KpisPage() {
   )
 }
 
+const KPI_TABLE_HIDDEN_COLUMNS = new Set(['cropSeasonId'])
+
+function kpiTableColumnKeys(row: object): string[] {
+  return Object.keys(row).filter((k) => !KPI_TABLE_HIDDEN_COLUMNS.has(k))
+}
+
+function kpiTableColumnLabel(key: string): string {
+  if (key === 'cropSeasonCode') return 'Crop season'
+  return key
+}
+
 function KpiTable({
   rows,
   loading,
@@ -205,7 +216,7 @@ function KpiTable({
   if (error) return <p className="text-sm text-red-700">{(error as Error).message}</p>
   if (!rows?.length) return <p className="text-sm text-ink-muted">No rows for this season.</p>
 
-  const keys = Object.keys(rows[0] as object)
+  const keys = kpiTableColumnKeys(rows[0] as object)
 
   return (
     <div className="overflow-auto rounded-xl border border-black/5 bg-surface-card shadow-card">
@@ -214,7 +225,7 @@ function KpiTable({
           <tr>
             {keys.map((k) => (
               <th key={k} className="whitespace-nowrap px-3 py-2 font-semibold text-ink-faint">
-                {k}
+                {kpiTableColumnLabel(k)}
               </th>
             ))}
           </tr>

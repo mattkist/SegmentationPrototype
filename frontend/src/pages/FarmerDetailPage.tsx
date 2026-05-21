@@ -79,6 +79,7 @@ export function FarmerDetailPage() {
                     <span>ESG {data.officialSegmentation.esgScore}</span>
                     <span>Yield {data.officialSegmentation.yieldScore}</span>
                     <span>Scale {data.officialSegmentation.scaleScore}</span>
+                    <span>Y&amp;S {data.officialSegmentation.yieldAndScaleScore}</span>
                   </dd>
                 </div>
               </dl>

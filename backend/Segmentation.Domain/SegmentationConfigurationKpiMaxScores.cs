@@ -3,88 +3,101 @@ using Segmentation.Domain.Entities;
 namespace Segmentation.Domain;
 
 /// <summary>
-/// Derives per-KPI MaxScore values from configuration rules and validates the configured total.
+/// Derives per-KPI MaxScore values from configuration rules and validates the configured total per culture type.
 /// </summary>
 public static class SegmentationConfigurationKpiMaxScores
 {
-    public static void SynchronizeFromRules(SegmentationConfiguration configuration)
+    public static void SynchronizeFromRules(SegmentationConfigurationCultureType cultureType)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(cultureType);
 
-        if (configuration.Loyalty is null)
+        if (cultureType.Loyalty is null)
             throw new InvalidOperationException("Loyalty configuration is required.");
-        if (configuration.Quality is null)
+        if (cultureType.Quality is null)
             throw new InvalidOperationException("Quality configuration is required.");
-        if (configuration.Financial is null)
+        if (cultureType.Financial is null)
             throw new InvalidOperationException("Financial configuration is required.");
-        if (configuration.Technology is null)
+        if (cultureType.Technology is null)
             throw new InvalidOperationException("Technology configuration is required.");
-        if (configuration.Esg is null)
+        if (cultureType.Esg is null)
             throw new InvalidOperationException("ESG configuration is required.");
-        if (configuration.Yield is null)
+        if (cultureType.Yield is null)
             throw new InvalidOperationException("Yield configuration is required.");
-        if (configuration.Scale is null)
+        if (cultureType.Scale is null)
             throw new InvalidOperationException("Scale configuration is required.");
+        if (cultureType.YieldAndScale is null)
+            throw new InvalidOperationException("Yield & Scale configuration is required.");
 
-        var loyalty = configuration.Loyalty;
+        var loyalty = cultureType.Loyalty;
         loyalty.MaxScore = MaxPositiveOrZero(loyalty.SeasonQuantityRanges.Select(r => r.Score))
             + MaxPositiveOrZero(loyalty.HistoricalVolumeRanges.Select(r => r.Score));
 
-        var quality = configuration.Quality;
+        var quality = cultureType.Quality;
         quality.MaxScore = quality.IqsRanges.Count == 0
             ? 0
             : quality.IqsRanges.Max(r => r.Score);
 
-        var financial = configuration.Financial;
+        var financial = cultureType.Financial;
         financial.MaxScore = financial.SelfFundingRanges.Count == 0
             ? 0
             : financial.SelfFundingRanges.Max(r => r.Score);
 
-        var technology = configuration.Technology;
+        var technology = cultureType.Technology;
         technology.MaxScore = SumPositive(
             technology.HasLargeBaseRidgeWithMulchScore,
             technology.HasBroadGrateFurnaceScore,
-            technology.HasTechnologyPackageAdherenceScore);
+            technology.HasTechnologyPackageAdherenceScore,
+            technology.HasStandardBarnScore);
 
-        var esg = configuration.Esg;
+        var esg = cultureType.Esg;
         esg.MaxScore = esg.ReforestationMaximumScore + esg.NativeForestMaximumScore;
 
-        var yield = configuration.Yield;
+        var yield = cultureType.Yield;
         yield.MaxScore = yield.Ranges.Count == 0 ? 0 : yield.Ranges.Max(r => r.Score);
 
-        var scale = configuration.Scale;
+        var scale = cultureType.Scale;
         scale.MaxScore = scale.Ranges.Count == 0 ? 0 : scale.Ranges.Max(r => r.Score);
+
+        var yieldAndScale = cultureType.YieldAndScale;
+        yieldAndScale.MaxScore = MaxPositiveOrZero(yieldAndScale.Ranges.Select(r => r.Score));
     }
 
-    public static int SumKpiMaxScores(SegmentationConfiguration configuration)
+    public static void SynchronizeAll(SegmentationConfiguration configuration)
     {
-        return configuration.Loyalty!.MaxScore
-            + configuration.Quality!.MaxScore
-            + configuration.Financial!.MaxScore
-            + configuration.Technology!.MaxScore
-            + configuration.Esg!.MaxScore
-            + configuration.Yield!.MaxScore
-            + configuration.Scale!.MaxScore;
+        foreach (var ct in configuration.CultureTypes)
+            SynchronizeFromRules(ct);
     }
 
-    public static KpiMaxScoreValidationResult ValidateAgainstMaximum(SegmentationConfiguration configuration)
+    public static int SumKpiMaxScores(SegmentationConfigurationCultureType cultureType)
+    {
+        return cultureType.Loyalty!.MaxScore
+            + cultureType.Quality!.MaxScore
+            + cultureType.Financial!.MaxScore
+            + cultureType.Technology!.MaxScore
+            + cultureType.Esg!.MaxScore
+            + cultureType.Yield!.MaxScore
+            + cultureType.Scale!.MaxScore
+            + cultureType.YieldAndScale!.MaxScore;
+    }
+
+    public static KpiMaxScoreValidationResult ValidateCultureType(SegmentationConfigurationCultureType cultureType)
     {
         try
         {
-            SynchronizeFromRules(configuration);
+            SynchronizeFromRules(cultureType);
         }
         catch (InvalidOperationException ex)
         {
             return new KpiMaxScoreValidationResult(false, 0, ex.Message);
         }
 
-        var sum = SumKpiMaxScores(configuration);
-        if (sum != configuration.MaximumScore)
+        var sum = SumKpiMaxScores(cultureType);
+        if (sum != cultureType.MaximumScore)
         {
             return new KpiMaxScoreValidationResult(
                 false,
                 sum,
-                $"Sum of KPI max scores ({sum}) must equal MaximumScore ({configuration.MaximumScore}).");
+                $"Sum of KPI max scores ({sum}) must equal MaximumScore ({cultureType.MaximumScore}) for culture type '{cultureType.CultureTypeCode}'.");
         }
 
         return new KpiMaxScoreValidationResult(true, sum, null);

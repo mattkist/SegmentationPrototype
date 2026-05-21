@@ -19,27 +19,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EsgKpi> EsgKpis => Set<EsgKpi>();
     public DbSet<SegmentationConfiguration> SegmentationConfigurations => Set<SegmentationConfiguration>();
     public DbSet<SegmentationSegment> SegmentationSegments => Set<SegmentationSegment>();
+    public DbSet<SegmentationConfigurationCultureType> SegmentationConfigurationCultureTypes => Set<SegmentationConfigurationCultureType>();
+    public DbSet<SegmentationConfigurationCultureTypeSegment> SegmentationConfigurationCultureTypeSegments =>
+        Set<SegmentationConfigurationCultureTypeSegment>();
     public DbSet<SegmentationConfigurationLoyalty> SegmentationConfigurationLoyalties => Set<SegmentationConfigurationLoyalty>();
     public DbSet<LoyaltySeasonQuantityRange> LoyaltySeasonQuantityRanges => Set<LoyaltySeasonQuantityRange>();
-    public DbSet<LoyaltySeasonQuantityRangeSkippedCropSeason> LoyaltySeasonQuantityRangeSkippedCropSeasons =>
-        Set<LoyaltySeasonQuantityRangeSkippedCropSeason>();
     public DbSet<LoyaltyHistoricalVolumeRange> LoyaltyHistoricalVolumeRanges => Set<LoyaltyHistoricalVolumeRange>();
     public DbSet<SegmentationConfigurationQuality> SegmentationConfigurationQualities => Set<SegmentationConfigurationQuality>();
     public DbSet<QualityIqsRange> QualityIqsRanges => Set<QualityIqsRange>();
-    public DbSet<QualityIqsRangeSkippedCropSeason> QualityIqsRangeSkippedCropSeasons => Set<QualityIqsRangeSkippedCropSeason>();
     public DbSet<SegmentationConfigurationFinancial> SegmentationConfigurationFinancials => Set<SegmentationConfigurationFinancial>();
     public DbSet<FinancialSelfFundingRange> FinancialSelfFundingRanges => Set<FinancialSelfFundingRange>();
-    public DbSet<FinancialSelfFundingRangeSkippedCropSeason> FinancialSelfFundingRangeSkippedCropSeasons =>
-        Set<FinancialSelfFundingRangeSkippedCropSeason>();
     public DbSet<SegmentationConfigurationTechnology> SegmentationConfigurationTechnologies => Set<SegmentationConfigurationTechnology>();
     public DbSet<SegmentationConfigurationEsg> SegmentationConfigurationEsgs => Set<SegmentationConfigurationEsg>();
     public DbSet<SegmentationConfigurationYield> SegmentationConfigurationYields => Set<SegmentationConfigurationYield>();
     public DbSet<YieldRange> YieldRanges => Set<YieldRange>();
-    public DbSet<YieldRangeSkippedCropSeason> YieldRangeSkippedCropSeasons => Set<YieldRangeSkippedCropSeason>();
     public DbSet<SegmentationConfigurationScale> SegmentationConfigurationScales => Set<SegmentationConfigurationScale>();
     public DbSet<ScaleRange> ScaleRanges => Set<ScaleRange>();
-    public DbSet<ScaleRangeSkippedCropSeason> ScaleRangeSkippedCropSeasons => Set<ScaleRangeSkippedCropSeason>();
+    public DbSet<SegmentationConfigurationYieldAndScale> SegmentationConfigurationYieldAndScales =>
+        Set<SegmentationConfigurationYieldAndScale>();
+    public DbSet<YieldAndScaleRange> YieldAndScaleRanges => Set<YieldAndScaleRange>();
     public DbSet<SegmentationSimulation> SegmentationSimulations => Set<SegmentationSimulation>();
+    public DbSet<SegmentationSimulationCropSeason> SegmentationSimulationCropSeasons => Set<SegmentationSimulationCropSeason>();
     public DbSet<SegmentationSimulationFarmer> SegmentationSimulationFarmers => Set<SegmentationSimulationFarmer>();
     public DbSet<FarmerSegmentation> FarmerSegmentations => Set<FarmerSegmentation>();
 
@@ -163,23 +163,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("SegmentationConfigurations");
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).HasMaxLength(256).IsRequired();
-            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Segments).WithOne(x => x.SegmentationConfiguration).HasForeignKey(x => x.SegmentationConfigurationId)
                 .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Loyalty).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationLoyalty>(x => x.SegmentationConfigurationId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Quality).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationQuality>(x => x.SegmentationConfigurationId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Financial).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationFinancial>(x => x.SegmentationConfigurationId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Technology).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationTechnology>(x => x.SegmentationConfigurationId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Esg).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationEsg>(x => x.SegmentationConfigurationId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Yield).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationYield>(x => x.SegmentationConfigurationId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.Scale).WithOne(x => x.SegmentationConfiguration).HasForeignKey<SegmentationConfigurationScale>(x => x.SegmentationConfigurationId)
+            e.HasMany(x => x.CultureTypes).WithOne(x => x.SegmentationConfiguration).HasForeignKey(x => x.SegmentationConfigurationId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -191,14 +177,50 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.SegmentName).HasMaxLength(128).IsRequired();
         });
 
+        modelBuilder.Entity<SegmentationConfigurationCultureType>(e =>
+        {
+            e.ToTable("SegmentationConfigurationCultureTypes");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.SegmentationConfigurationId, x.CultureTypeCode }).IsUnique();
+            e.HasMany(x => x.CultureTypeSegments).WithOne(x => x.CultureType).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Loyalty).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationLoyalty>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Quality).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationQuality>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Financial).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationFinancial>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Technology).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationTechnology>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Esg).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationEsg>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Yield).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationYield>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Scale).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationScale>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.YieldAndScale).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationYieldAndScale>(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SegmentationConfigurationCultureTypeSegment>(e =>
+        {
+            e.ToTable("SegmentationConfigurationCultureTypeSegments");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.SegmentationConfigurationCultureTypeId, x.SegmentationSegmentId }).IsUnique();
+            e.HasOne(x => x.Segment).WithMany(x => x.CultureTypeSegments).HasForeignKey(x => x.SegmentationSegmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<SegmentationConfigurationLoyalty>(e =>
         {
             e.ToTable("SegmentationConfigurationLoyalties");
-            e.HasKey(x => x.SegmentationConfigurationId);
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
-            e.HasMany(x => x.SeasonQuantityRanges).WithOne(x => x.Loyalty).HasForeignKey(x => x.SegmentationConfigurationId)
+            e.HasMany(x => x.SeasonQuantityRanges).WithOne(x => x.Loyalty).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
-            e.HasMany(x => x.HistoricalVolumeRanges).WithOne(x => x.Loyalty).HasForeignKey(x => x.SegmentationConfigurationId)
+            e.HasMany(x => x.HistoricalVolumeRanges).WithOne(x => x.Loyalty).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -206,15 +228,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.ToTable("LoyaltySeasonQuantityRanges");
             e.HasKey(x => x.Id);
-            e.HasMany(x => x.SkippedCropSeasons).WithOne(x => x.Range).HasForeignKey(x => x.LoyaltySeasonQuantityRangeId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<LoyaltySeasonQuantityRangeSkippedCropSeason>(e =>
-        {
-            e.ToTable("LoyaltySeasonQuantityRangeSkippedCropSeasons");
-            e.HasKey(x => x.Id);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LoyaltyHistoricalVolumeRange>(e =>
@@ -226,9 +239,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<SegmentationConfigurationQuality>(e =>
         {
             e.ToTable("SegmentationConfigurationQualities");
-            e.HasKey(x => x.SegmentationConfigurationId);
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
-            e.HasMany(x => x.IqsRanges).WithOne(x => x.Quality).HasForeignKey(x => x.SegmentationConfigurationId)
+            e.HasMany(x => x.IqsRanges).WithOne(x => x.Quality).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -236,22 +249,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.ToTable("QualityIqsRanges");
             e.HasKey(x => x.Id);
-            e.HasMany(x => x.SkippedCropSeasons).WithOne(x => x.Range).HasForeignKey(x => x.QualityIqsRangeId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<QualityIqsRangeSkippedCropSeason>(e =>
-        {
-            e.ToTable("QualityIqsRangeSkippedCropSeasons");
-            e.HasKey(x => x.Id);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<SegmentationConfigurationFinancial>(e =>
         {
             e.ToTable("SegmentationConfigurationFinancials");
-            e.HasKey(x => x.SegmentationConfigurationId);
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
-            e.HasMany(x => x.SelfFundingRanges).WithOne(x => x.Financial).HasForeignKey(x => x.SegmentationConfigurationId)
+            e.HasMany(x => x.SelfFundingRanges).WithOne(x => x.Financial).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -259,73 +264,67 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.ToTable("FinancialSelfFundingRanges");
             e.HasKey(x => x.Id);
-            e.HasMany(x => x.SkippedCropSeasons).WithOne(x => x.Range).HasForeignKey(x => x.FinancialSelfFundingRangeId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<FinancialSelfFundingRangeSkippedCropSeason>(e =>
-        {
-            e.ToTable("FinancialSelfFundingRangeSkippedCropSeasons");
-            e.HasKey(x => x.Id);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<SegmentationConfigurationTechnology>(e =>
         {
             e.ToTable("SegmentationConfigurationTechnologies");
-            e.HasKey(x => x.SegmentationConfigurationId);
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
         });
 
         modelBuilder.Entity<SegmentationConfigurationEsg>(e =>
         {
             e.ToTable("SegmentationConfigurationEsgs");
-            e.HasKey(x => x.SegmentationConfigurationId);
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
         });
 
         modelBuilder.Entity<SegmentationConfigurationYield>(e =>
         {
             e.ToTable("SegmentationConfigurationYields");
-            e.HasKey(x => x.SegmentationConfigurationId);
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
-            e.HasMany(x => x.Ranges).WithOne(x => x.Yield).HasForeignKey(x => x.SegmentationConfigurationId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Ranges).WithOne(x => x.Yield).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<YieldRange>(e =>
         {
             e.ToTable("YieldRanges");
             e.HasKey(x => x.Id);
-            e.HasMany(x => x.SkippedCropSeasons).WithOne(x => x.Range).HasForeignKey(x => x.YieldRangeId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<YieldRangeSkippedCropSeason>(e =>
-        {
-            e.ToTable("YieldRangeSkippedCropSeasons");
-            e.HasKey(x => x.Id);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<SegmentationConfigurationScale>(e =>
         {
             e.ToTable("SegmentationConfigurationScales");
-            e.HasKey(x => x.SegmentationConfigurationId);
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
-            e.HasMany(x => x.Ranges).WithOne(x => x.Scale).HasForeignKey(x => x.SegmentationConfigurationId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Ranges).WithOne(x => x.Scale).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ScaleRange>(e =>
         {
             e.ToTable("ScaleRanges");
             e.HasKey(x => x.Id);
-            e.HasMany(x => x.SkippedCropSeasons).WithOne(x => x.Range).HasForeignKey(x => x.ScaleRangeId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<ScaleRangeSkippedCropSeason>(e =>
+        modelBuilder.Entity<SegmentationConfigurationYieldAndScale>(e =>
         {
-            e.ToTable("ScaleRangeSkippedCropSeasons");
+            e.ToTable("SegmentationConfigurationYieldAndScales");
+            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
+            e.Property(x => x.Relevance).HasPrecision(9, 4);
+            e.HasMany(x => x.Ranges).WithOne(x => x.YieldAndScale).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<YieldAndScaleRange>(e =>
+        {
+            e.ToTable("YieldAndScaleRanges");
             e.HasKey(x => x.Id);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
+            e.Property(x => x.MinimumModule).HasPrecision(10, 1);
+            e.Property(x => x.MaximumModule).HasPrecision(10, 1);
         });
 
         modelBuilder.Entity<SegmentationSimulation>(e =>
@@ -333,19 +332,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("SegmentationSimulations");
             e.HasKey(x => x.Id);
             e.Property(x => x.Status).HasMaxLength(1).IsRequired();
-            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasOne(x => x.SegmentationConfiguration).WithMany(x => x.Simulations).HasForeignKey(x => x.SegmentationConfigurationId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasMany(x => x.ScopeCropSeasons).WithOne(x => x.SegmentationSimulation).HasForeignKey(x => x.SegmentationSimulationId)
+                .OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.Farmers).WithOne(x => x.SegmentationSimulation).HasForeignKey(x => x.SegmentationSimulationId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SegmentationSimulationCropSeason>(e =>
+        {
+            e.ToTable("SegmentationSimulationCropSeasons");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.SegmentationSimulationId, x.CropSeasonId }).IsUnique();
+            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<SegmentationSimulationFarmer>(e =>
         {
             e.ToTable("SegmentationSimulationFarmers");
             e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
             e.HasIndex(x => new { x.SegmentationSimulationId, x.FarmerId }).IsUnique();
             e.HasOne(x => x.Farmer).WithMany(x => x.SimulationResults).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Segment).WithMany(x => x.SimulationFarmers).HasForeignKey(x => x.SegmentationConfigurationSegmentId)
@@ -363,5 +371,4 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
-
 }
