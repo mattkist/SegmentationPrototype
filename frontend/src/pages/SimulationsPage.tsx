@@ -71,6 +71,10 @@ export function SimulationsPage() {
         <p className="mt-1 text-xs text-ink-muted">
           Target season (header): {seasonId}. Select scope seasons for multi-season rules.
         </p>
+        <p className="mt-2 flex items-start gap-2 rounded-lg border border-sky-200/60 bg-sky-50/60 px-3 py-2 text-xs text-ink-muted">
+          <Hint content={hints.simulationNewFarmer} />
+          <span>{hints.simulationNewFarmerShort}</span>
+        </p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <label className="block min-w-[220px] text-sm">
             <span className="text-ink-muted">Configuration</span>

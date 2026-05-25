@@ -27,10 +27,7 @@ export function FarmerDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <Link
-        to={`/farmers`}
-        className="text-sm font-medium text-leaf hover:underline"
-      >
+      <Link to={`/farmers`} className="text-sm font-medium text-leaf hover:underline">
         ← Farmers
       </Link>
       <div className="flex items-center gap-2">
@@ -77,8 +74,6 @@ export function FarmerDetailPage() {
                     <span>Financial {data.officialSegmentation.financialScore}</span>
                     <span>Tech {data.officialSegmentation.technologiesScore}</span>
                     <span>ESG {data.officialSegmentation.esgScore}</span>
-                    <span>Yield {data.officialSegmentation.yieldScore}</span>
-                    <span>Scale {data.officialSegmentation.scaleScore}</span>
                     <span>Y&amp;S {data.officialSegmentation.yieldAndScaleScore}</span>
                   </dd>
                 </div>
@@ -99,11 +94,35 @@ export function FarmerDetailPage() {
               <KpiCard title="Loyalty" row={data.kpis.loyalty} />
               <KpiCard title="Quality" row={data.kpis.quality} />
               <KpiCard title="Financial" row={data.kpis.financial} />
-              <KpiCard title="Technologies" row={data.kpis.technologies} />
+              <KpiCard title="Yield & Scale" row={data.kpis.yieldAndScale} />
               <KpiCard title="ESG" row={data.kpis.esg} />
-              <KpiCard title="Yield" row={data.kpis.yield} />
-              <KpiCard title="Scale" row={data.kpis.scale} />
             </div>
+            {data.kpis.technologies.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-xs font-semibold uppercase text-ink-faint">Technologies</h3>
+                <ul className="mt-2 space-y-1 text-sm text-ink-muted">
+                  {data.kpis.technologies.map((t, i) => (
+                    <li key={i}>
+                      {t.technologyName} ({t.cultureTypeCode})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {data.kpis.esgIrregularities.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-xs font-semibold uppercase text-ink-faint">
+                  ESG irregularities
+                </h3>
+                <ul className="mt-2 space-y-1 text-sm text-ink-muted">
+                  {data.kpis.esgIrregularities.map((t, i) => (
+                    <li key={i}>
+                      {t.irregularityTypeName} ({t.cultureTypeCode})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
         </>
       )}
@@ -118,16 +137,28 @@ function KpiCard({
   title: string
   row: unknown
 }) {
+  if (!row) {
+    return (
+      <div className="rounded-lg border border-dashed border-black/10 p-3">
+        <h3 className="text-xs font-semibold text-ink-faint">{title}</h3>
+        <p className="mt-1 text-sm text-ink-muted">No data</p>
+      </div>
+    )
+  }
+  const entries = Object.entries(row as Record<string, unknown>).filter(
+    ([k]) => !['farmerCode', 'cropSeasonId', 'cropSeasonCode'].includes(k),
+  )
   return (
-    <div className="rounded-lg border border-black/5 bg-surface p-3">
-      <div className="text-xs font-semibold uppercase tracking-wide text-ink-faint">{title}</div>
-      {row && typeof row === 'object' ? (
-        <pre className="mt-2 max-h-40 overflow-auto text-[11px] leading-relaxed text-ink-muted">
-          {JSON.stringify(row, null, 2)}
-        </pre>
-      ) : (
-        <p className="mt-2 text-sm text-ink-muted">No row for this season.</p>
-      )}
+    <div className="rounded-lg border border-black/5 bg-surface-muted/30 p-3">
+      <h3 className="text-xs font-semibold text-ink-faint">{title}</h3>
+      <dl className="mt-2 space-y-1 text-xs">
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-2">
+            <dt className="text-ink-faint">{k}</dt>
+            <dd className="font-mono text-ink-muted">{String(v)}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   )
 }

@@ -59,7 +59,7 @@ export function YieldEditor({
   return (
     <RangeList
       title="Yield"
-      hint={`${hints.yieldScale}\n\nSimulation uses only the latest crop season in the scope list.`}
+      hint={`${hints.yieldAndScale}\n\nSimulation uses only the latest crop season in the scope list.`}
       labelBetween="Yield BETWEEN"
       ranges={block.yield.ranges}
       onAdd={() =>
@@ -101,7 +101,7 @@ export function ScaleEditor({
   return (
     <RangeList
       title="Scale"
-      hint={`${hints.yieldScale}\n\nSimulation uses only the latest crop season in the scope list.`}
+      hint={`${hints.yieldAndScale}\n\nSimulation uses only the latest crop season in the scope list.`}
       labelBetween="Area BETWEEN"
       ranges={block.scale.ranges}
       onAdd={() =>

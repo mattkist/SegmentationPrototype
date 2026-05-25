@@ -9,11 +9,6 @@ public class SegmentationConfigurationTechnology
 
     public decimal Relevance { get; set; }
 
-    public int HasLargeBaseRidgeWithMulchScore { get; set; }
-
-    public int HasBroadGrateFurnaceScore { get; set; }
-
-    public int HasTechnologyPackageAdherenceScore { get; set; }
-
-    public int HasStandardBarnScore { get; set; }
+    public ICollection<SegmentationConfigurationTechnologyScore> TechnologyScores { get; set; } =
+        new List<SegmentationConfigurationTechnologyScore>();
 }

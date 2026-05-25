@@ -1,6 +1,6 @@
 namespace Segmentation.Domain.Entities;
 
-public class TechnologiesKpi
+public class YieldAndScaleKpi
 {
     public Guid Id { get; set; }
 
@@ -13,6 +13,9 @@ public class TechnologiesKpi
     public required string CultureTypeCode { get; set; }
     public CultureType CultureType { get; set; } = null!;
 
-    public int TechnologyId { get; set; }
-    public TechnologyCatalog Technology { get; set; } = null!;
+    public int Yield { get; set; }
+
+    public int Scale { get; set; }
+
+    public int ContractedAmountKg { get; set; }
 }

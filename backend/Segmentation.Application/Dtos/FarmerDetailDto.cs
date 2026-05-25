@@ -28,7 +28,7 @@ public sealed record FarmerKpisForSeasonDto(
     LoyaltyKpiRowDto? Loyalty,
     QualityKpiRowDto? Quality,
     FinancialKpiRowDto? Financial,
-    YieldKpiRowDto? Yield,
-    ScaleKpiRowDto? Scale,
-    TechnologiesKpiRowDto? Technologies,
-    EsgKpiRowDto? Esg);
+    YieldAndScaleKpiRowDto? YieldAndScale,
+    IReadOnlyList<TechnologiesKpiRowDto> Technologies,
+    EsgKpiRowDto? Esg,
+    IReadOnlyList<EsgIrregularityKpiRowDto> EsgIrregularities);

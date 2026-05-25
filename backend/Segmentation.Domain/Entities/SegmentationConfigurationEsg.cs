@@ -17,7 +17,6 @@ public class SegmentationConfigurationEsg
 
     public int NativeForestMaximumScore { get; set; }
 
-    public int MinorIrregularityScore { get; set; }
-
-    public int MajorIrregularityScore { get; set; }
+    public ICollection<SegmentationConfigurationEsgIrregularityScore> IrregularityScores { get; set; } =
+        new List<SegmentationConfigurationEsgIrregularityScore>();
 }

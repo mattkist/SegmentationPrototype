@@ -37,4 +37,7 @@ public class SegmentationSimulationFarmer
 
     /// <summary>Legacy column; rankings are no longer computed (always 0).</summary>
     public int Rank { get; set; }
+
+    /// <summary>True when the farmer had no contract in the season before the simulation target season.</summary>
+    public bool IsNewFarmer { get; set; }
 }

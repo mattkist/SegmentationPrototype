@@ -47,13 +47,11 @@ public sealed class CultureTypeConfigurationDetailDto
     public required SegmentationYieldAndScaleDetailDto YieldAndScale { get; init; }
 }
 
-public sealed class SegmentationLoyaltyDetailDto : SegmentationLoyaltyWriteDto
-{
-    public int MaxScore { get; init; }
-}
+public sealed class SegmentationLoyaltyDetailDto : SegmentationLoyaltyWriteDto;
 
 public class SegmentationLoyaltyWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
     public required IReadOnlyList<LoyaltySeasonQuantityRangeDto> SeasonQuantityRanges { get; init; }
     public required IReadOnlyList<LoyaltyHistoricalVolumeRangeDto> HistoricalVolumeRanges { get; init; }
@@ -75,13 +73,11 @@ public sealed class LoyaltyHistoricalVolumeRangeDto
     public int Score { get; init; }
 }
 
-public sealed class SegmentationQualityDetailDto : SegmentationQualityWriteDto
-{
-    public int MaxScore { get; init; }
-}
+public sealed class SegmentationQualityDetailDto : SegmentationQualityWriteDto;
 
 public class SegmentationQualityWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
     public int NtrmScore { get; init; }
     public int MixtureScore { get; init; }
@@ -96,13 +92,11 @@ public sealed class QualityIqsRangeDto
     public int Score { get; init; }
 }
 
-public sealed class SegmentationFinancialDetailDto : SegmentationFinancialWriteDto
-{
-    public int MaxScore { get; init; }
-}
+public sealed class SegmentationFinancialDetailDto : SegmentationFinancialWriteDto;
 
 public class SegmentationFinancialWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
     public int DebtScore { get; init; }
     public required IReadOnlyList<FinancialSelfFundingRangeDto> SelfFundingRanges { get; init; }
@@ -116,43 +110,45 @@ public sealed class FinancialSelfFundingRangeDto
     public int Score { get; init; }
 }
 
-public sealed class SegmentationTechnologyDetailDto : SegmentationTechnologyWriteDto
+public sealed class SegmentationTechnologyDetailDto : SegmentationTechnologyWriteDto;
+
+public sealed class TechnologyScoreDto
 {
-    public int MaxScore { get; init; }
+    public int TechnologyId { get; init; }
+    public int Score { get; init; }
 }
 
 public class SegmentationTechnologyWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
-    public int HasLargeBaseRidgeWithMulchScore { get; init; }
-    public int HasBroadGrateFurnaceScore { get; init; }
-    public int HasTechnologyPackageAdherenceScore { get; init; }
-    public int HasStandardBarnScore { get; init; }
+    public required IReadOnlyList<TechnologyScoreDto> TechnologyScores { get; init; }
 }
 
-public sealed class SegmentationEsgDetailDto : SegmentationEsgWriteDto
+public sealed class SegmentationEsgDetailDto : SegmentationEsgWriteDto;
+
+public sealed class EsgIrregularityScoreDto
 {
-    public int MaxScore { get; init; }
+    public int IrregularityTypeId { get; init; }
+    public int Score { get; init; }
 }
 
 public class SegmentationEsgWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
     public int ReforestationScorePerPercentualPoint { get; init; }
     public int ReforestationMaximumScore { get; init; }
     public int NativeForestScorePerPercentualPoint { get; init; }
     public int NativeForestMaximumScore { get; init; }
-    public int MinorIrregularityScore { get; init; }
-    public int MajorIrregularityScore { get; init; }
+    public required IReadOnlyList<EsgIrregularityScoreDto> IrregularityScores { get; init; }
 }
 
-public sealed class SegmentationYieldDetailDto : SegmentationYieldWriteDto
-{
-    public int MaxScore { get; init; }
-}
+public sealed class SegmentationYieldDetailDto : SegmentationYieldWriteDto;
 
 public class SegmentationYieldWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
     public required IReadOnlyList<YieldRangeDto> Ranges { get; init; }
 }
@@ -165,13 +161,11 @@ public sealed class YieldRangeDto
     public int Score { get; init; }
 }
 
-public sealed class SegmentationScaleDetailDto : SegmentationScaleWriteDto
-{
-    public int MaxScore { get; init; }
-}
+public sealed class SegmentationScaleDetailDto : SegmentationScaleWriteDto;
 
 public class SegmentationScaleWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
     public required IReadOnlyList<ScaleRangeDto> Ranges { get; init; }
 }
@@ -184,13 +178,11 @@ public sealed class ScaleRangeDto
     public int Score { get; init; }
 }
 
-public sealed class SegmentationYieldAndScaleDetailDto : SegmentationYieldAndScaleWriteDto
-{
-    public int MaxScore { get; init; }
-}
+public sealed class SegmentationYieldAndScaleDetailDto : SegmentationYieldAndScaleWriteDto;
 
 public class SegmentationYieldAndScaleWriteDto
 {
+    public int MaxScore { get; init; }
     public decimal Relevance { get; init; }
     public required IReadOnlyList<YieldAndScaleRangeDto> Ranges { get; init; }
 }

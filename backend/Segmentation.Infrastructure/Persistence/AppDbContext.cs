@@ -13,10 +13,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<LoyaltyKpi> LoyaltyKpis => Set<LoyaltyKpi>();
     public DbSet<QualityKpi> QualityKpis => Set<QualityKpi>();
     public DbSet<FinancialKpi> FinancialKpis => Set<FinancialKpi>();
-    public DbSet<YieldKpi> YieldKpis => Set<YieldKpi>();
-    public DbSet<ScaleKpi> ScaleKpis => Set<ScaleKpi>();
+    public DbSet<TechnologyCatalog> Technologies => Set<TechnologyCatalog>();
+    public DbSet<IrregularityTypeCatalog> IrregularityTypes => Set<IrregularityTypeCatalog>();
+    public DbSet<YieldAndScaleKpi> YieldAndScaleKpis => Set<YieldAndScaleKpi>();
     public DbSet<TechnologiesKpi> TechnologiesKpis => Set<TechnologiesKpi>();
     public DbSet<EsgKpi> EsgKpis => Set<EsgKpi>();
+    public DbSet<EsgIrregularityKpi> EsgIrregularityKpis => Set<EsgIrregularityKpi>();
     public DbSet<SegmentationConfiguration> SegmentationConfigurations => Set<SegmentationConfiguration>();
     public DbSet<SegmentationSegment> SegmentationSegments => Set<SegmentationSegment>();
     public DbSet<SegmentationConfigurationCultureType> SegmentationConfigurationCultureTypes => Set<SegmentationConfigurationCultureType>();
@@ -30,7 +32,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<SegmentationConfigurationFinancial> SegmentationConfigurationFinancials => Set<SegmentationConfigurationFinancial>();
     public DbSet<FinancialSelfFundingRange> FinancialSelfFundingRanges => Set<FinancialSelfFundingRange>();
     public DbSet<SegmentationConfigurationTechnology> SegmentationConfigurationTechnologies => Set<SegmentationConfigurationTechnology>();
+    public DbSet<SegmentationConfigurationTechnologyScore> SegmentationConfigurationTechnologyScores =>
+        Set<SegmentationConfigurationTechnologyScore>();
     public DbSet<SegmentationConfigurationEsg> SegmentationConfigurationEsgs => Set<SegmentationConfigurationEsg>();
+    public DbSet<SegmentationConfigurationEsgIrregularityScore> SegmentationConfigurationEsgIrregularityScores =>
+        Set<SegmentationConfigurationEsgIrregularityScore>();
     public DbSet<SegmentationConfigurationYield> SegmentationConfigurationYields => Set<SegmentationConfigurationYield>();
     public DbSet<YieldRange> YieldRanges => Set<YieldRange>();
     public DbSet<SegmentationConfigurationScale> SegmentationConfigurationScales => Set<SegmentationConfigurationScale>();
@@ -117,26 +123,33 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
-        modelBuilder.Entity<YieldKpi>(e =>
+        modelBuilder.Entity<TechnologyCatalog>(e =>
         {
-            e.ToTable("YieldKpis");
+            e.ToTable("Technologies");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Name).HasMaxLength(256).IsRequired();
+        });
+
+        modelBuilder.Entity<IrregularityTypeCatalog>(e =>
+        {
+            e.ToTable("IrregularityTypes");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Name).HasMaxLength(256).IsRequired();
+        });
+
+        modelBuilder.Entity<YieldAndScaleKpi>(e =>
+        {
+            e.ToTable("YieldAndScaleKpis");
             e.HasKey(x => x.Id);
             e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.Farmer).WithMany(x => x.YieldKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Farmer).WithMany(x => x.YieldAndScaleKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
-        modelBuilder.Entity<ScaleKpi>(e =>
-        {
-            e.ToTable("ScaleKpis");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.Farmer).WithMany(x => x.ScaleKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
-        });
+
         modelBuilder.Entity<TechnologiesKpi>(e =>
         {
             e.ToTable("TechnologiesKpis");
@@ -145,8 +158,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Farmer).WithMany(x => x.TechnologiesKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
+            e.HasOne(x => x.Technology).WithMany(x => x.TechnologiesKpis).HasForeignKey(x => x.TechnologyId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode, x.TechnologyId }).IsUnique();
         });
+
         modelBuilder.Entity<EsgKpi>(e =>
         {
             e.ToTable("EsgKpis");
@@ -156,6 +172,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
+        });
+
+        modelBuilder.Entity<EsgIrregularityKpi>(e =>
+        {
+            e.ToTable("EsgIrregularityKpis");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
+            e.HasOne(x => x.Farmer).WithMany(x => x.EsgIrregularityKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.IrregularityType).WithMany(x => x.EsgIrregularityKpis).HasForeignKey(x => x.IrregularityTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode, x.IrregularityTypeId }).IsUnique();
         });
 
         modelBuilder.Entity<SegmentationConfiguration>(e =>
@@ -271,6 +300,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("SegmentationConfigurationTechnologies");
             e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
+            e.HasMany(x => x.TechnologyScores).WithOne(x => x.TechnologyBlock)
+                .HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SegmentationConfigurationTechnologyScore>(e =>
+        {
+            e.ToTable("SegmentationConfigurationTechnologyScores");
+            e.HasKey(x => x.Id);
+            e.HasOne(x => x.Technology).WithMany(x => x.ConfigurationScores).HasForeignKey(x => x.TechnologyId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.SegmentationConfigurationCultureTypeId, x.TechnologyId }).IsUnique();
         });
 
         modelBuilder.Entity<SegmentationConfigurationEsg>(e =>
@@ -278,6 +319,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("SegmentationConfigurationEsgs");
             e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
             e.Property(x => x.Relevance).HasPrecision(9, 4);
+            e.HasMany(x => x.IrregularityScores).WithOne(x => x.EsgBlock)
+                .HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SegmentationConfigurationEsgIrregularityScore>(e =>
+        {
+            e.ToTable("SegmentationConfigurationEsgIrregularityScores");
+            e.HasKey(x => x.Id);
+            e.HasOne(x => x.IrregularityType).WithMany(x => x.ConfigurationScores).HasForeignKey(x => x.IrregularityTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.SegmentationConfigurationCultureTypeId, x.IrregularityTypeId }).IsUnique();
         });
 
         modelBuilder.Entity<SegmentationConfigurationYield>(e =>

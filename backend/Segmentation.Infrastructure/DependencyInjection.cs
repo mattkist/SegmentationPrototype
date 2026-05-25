@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddScoped<ICropSeasonReadService, CropSeasonReadService>();
         services.AddScoped<IFarmerReadService, FarmerReadService>();
         services.AddScoped<IKpiReadService, KpiReadService>();
+        services.AddScoped<IReferenceDataReadService, ReferenceDataReadService>();
         services.AddScoped<IKpiImportService, KpiImportService>();
         services.AddScoped<ISegmentationConfigurationService, SegmentationConfigurationService>();
         services.AddScoped<ISegmentationSimulationService, SegmentationSimulationService>();

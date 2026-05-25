@@ -1,6 +1,13 @@
 namespace Segmentation.Application.Dtos;
 
-public sealed record LoyaltyKpiRowDto(string FarmerCode, int CropSeasonId, string CropSeasonCode, string CultureTypeCode, int DeliveredPercentage);
+public sealed record LoyaltyKpiRowDto(
+    string FarmerCode,
+    int CropSeasonId,
+    string CropSeasonCode,
+    string CultureTypeCode,
+    int DeliveredPercentage,
+    int DeliveredAmountKg,
+    int ContractedAmountKg);
 
 public sealed record QualityKpiRowDto(
     string FarmerCode,
@@ -19,19 +26,22 @@ public sealed record FinancialKpiRowDto(
     int SelfFundingPercentage,
     bool HaveDebt);
 
-public sealed record YieldKpiRowDto(string FarmerCode, int CropSeasonId, string CropSeasonCode, string CultureTypeCode, int Yield);
-
-public sealed record ScaleKpiRowDto(string FarmerCode, int CropSeasonId, string CropSeasonCode, string CultureTypeCode, int Scale);
+public sealed record YieldAndScaleKpiRowDto(
+    string FarmerCode,
+    int CropSeasonId,
+    string CropSeasonCode,
+    string CultureTypeCode,
+    int Yield,
+    int Scale,
+    int ContractedAmountKg);
 
 public sealed record TechnologiesKpiRowDto(
     string FarmerCode,
     int CropSeasonId,
     string CropSeasonCode,
     string CultureTypeCode,
-    bool HasLargeBaseRidgeWithMulch,
-    bool HasBroadGrateFurnace,
-    bool HasTechnologyPackageAdherence,
-    bool HasStandardBarn);
+    int TechnologyId,
+    string TechnologyName);
 
 public sealed record EsgKpiRowDto(
     string FarmerCode,
@@ -39,6 +49,16 @@ public sealed record EsgKpiRowDto(
     string CropSeasonCode,
     string CultureTypeCode,
     int ReforestationPercentage,
-    int NativeForestPercentage,
-    bool HasMinorIrregularity,
-    bool HasMajorIrregularity);
+    int NativeForestPercentage);
+
+public sealed record EsgIrregularityKpiRowDto(
+    string FarmerCode,
+    int CropSeasonId,
+    string CropSeasonCode,
+    string CultureTypeCode,
+    int IrregularityTypeId,
+    string IrregularityTypeName);
+
+public sealed record TechnologyDto(int Id, string Name);
+
+public sealed record IrregularityTypeDto(int Id, string Name);

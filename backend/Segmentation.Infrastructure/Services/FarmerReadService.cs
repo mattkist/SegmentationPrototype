@@ -113,19 +113,32 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
             .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
         var financial = await db.FinancialKpis.AsNoTracking()
             .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
-        var yield = await db.YieldKpis.AsNoTracking()
+        var yieldAndScale = await db.YieldAndScaleKpis.AsNoTracking()
             .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
-        var scale = await db.ScaleKpis.AsNoTracking()
-            .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
-        var tech = await db.TechnologiesKpis.AsNoTracking()
-            .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
+        var techRows = await db.TechnologiesKpis.AsNoTracking()
+            .Include(k => k.Technology)
+            .Where(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId)
+            .OrderBy(k => k.TechnologyId)
+            .ToListAsync(cancellationToken);
         var esg = await db.EsgKpis.AsNoTracking()
             .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
+        var esgIrregularities = await db.EsgIrregularityKpis.AsNoTracking()
+            .Include(k => k.IrregularityType)
+            .Where(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId)
+            .OrderBy(k => k.IrregularityTypeId)
+            .ToListAsync(cancellationToken);
 
         var kpis = new FarmerKpisForSeasonDto(
             loyalty is null
                 ? null
-                : new LoyaltyKpiRowDto(farmerCode, season.Id, season.Code, loyalty.CultureTypeCode, loyalty.DeliveredPercentage),
+                : new LoyaltyKpiRowDto(
+                    farmerCode,
+                    season.Id,
+                    season.Code,
+                    loyalty.CultureTypeCode,
+                    loyalty.DeliveredPercentage,
+                    loyalty.DeliveredAmountKg,
+                    loyalty.ContractedAmountKg),
             quality is null
                 ? null
                 : new QualityKpiRowDto(
@@ -145,19 +158,23 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                     financial.CultureTypeCode,
                     financial.SelfFundingPercentage,
                     financial.HaveDebt),
-            yield is null ? null : new YieldKpiRowDto(farmerCode, season.Id, season.Code, yield.CultureTypeCode, yield.Yield),
-            scale is null ? null : new ScaleKpiRowDto(farmerCode, season.Id, season.Code, scale.CultureTypeCode, scale.Scale),
-            tech is null
+            yieldAndScale is null
                 ? null
-                : new TechnologiesKpiRowDto(
+                : new YieldAndScaleKpiRowDto(
                     farmerCode,
                     season.Id,
                     season.Code,
-                    tech.CultureTypeCode,
-                    tech.HasLargeBaseRidgeWithMulch,
-                    tech.HasBroadGrateFurnace,
-                    tech.HasTechnologyPackageAdherence,
-                    tech.HasStandardBarn),
+                    yieldAndScale.CultureTypeCode,
+                    yieldAndScale.Yield,
+                    yieldAndScale.Scale,
+                    yieldAndScale.ContractedAmountKg),
+            techRows.Select(k => new TechnologiesKpiRowDto(
+                farmerCode,
+                season.Id,
+                season.Code,
+                k.CultureTypeCode,
+                k.TechnologyId,
+                k.Technology.Name)).ToList(),
             esg is null
                 ? null
                 : new EsgKpiRowDto(
@@ -166,9 +183,14 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                     season.Code,
                     esg.CultureTypeCode,
                     esg.ReforestationPercentage,
-                    esg.NativeForestPercentage,
-                    esg.HasMinorIrregularity,
-                    esg.HasMajorIrregularity));
+                    esg.NativeForestPercentage),
+            esgIrregularities.Select(k => new EsgIrregularityKpiRowDto(
+                farmerCode,
+                season.Id,
+                season.Code,
+                k.CultureTypeCode,
+                k.IrregularityTypeId,
+                k.IrregularityType.Name)).ToList());
 
         return new FarmerDetailDto(
             farmerId,

@@ -27,6 +27,8 @@ public static class DatabaseSeeder
 
     public static async Task SeedAsync(AppDbContext db, CancellationToken cancellationToken = default)
     {
+        await SeedCatalogsAsync(db, cancellationToken);
+
         if (await db.Farmers.AnyAsync(cancellationToken))
             return;
 
@@ -70,10 +72,22 @@ public static class DatabaseSeeder
 
         var gid = new SequentialGuidGenerator("c0000000-0000-4000-8000-000000000000");
 
-        foreach (var (farmerId, season, d) in LoyaltySeed())
-            db.LoyaltyKpis.Add(new LoyaltyKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, CultureTypeCode = CultureFor(farmerId), DeliveredPercentage = d });
+        foreach (var row in LoyaltySeed())
+        {
+            db.LoyaltyKpis.Add(new LoyaltyKpi
+            {
+                Id = gid.Next(),
+                FarmerId = row.FarmerId,
+                CropSeasonId = row.Season,
+                CultureTypeCode = CultureFor(row.FarmerId),
+                DeliveredPercentage = row.Pct,
+                DeliveredAmountKg = row.Delivered,
+                ContractedAmountKg = row.Contracted
+            });
+        }
 
         foreach (var row in QualitySeed())
+        {
             db.QualityKpis.Add(new QualityKpi
             {
                 Id = gid.Next(),
@@ -84,8 +98,10 @@ public static class DatabaseSeeder
                 HadNtrm = row.Ntrm,
                 HadQualityMixture = row.Mixture
             });
+        }
 
         foreach (var (farmerId, season, sf, debt) in FinancialSeed())
+        {
             db.FinancialKpis.Add(new FinancialKpi
             {
                 Id = gid.Next(),
@@ -95,27 +111,36 @@ public static class DatabaseSeeder
                 SelfFundingPercentage = sf,
                 HaveDebt = debt
             });
+        }
 
-        foreach (var (farmerId, season, y) in YieldSeed())
-            db.YieldKpis.Add(new YieldKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, CultureTypeCode = CultureFor(farmerId), Yield = y });
-
-        foreach (var (farmerId, season, s) in ScaleSeed())
-            db.ScaleKpis.Add(new ScaleKpi { Id = gid.Next(), FarmerId = farmerId, CropSeasonId = season, CultureTypeCode = CultureFor(farmerId), Scale = s });
+        foreach (var row in YieldAndScaleSeed())
+        {
+            db.YieldAndScaleKpis.Add(new YieldAndScaleKpi
+            {
+                Id = gid.Next(),
+                FarmerId = row.FarmerId,
+                CropSeasonId = row.Season,
+                CultureTypeCode = CultureFor(row.FarmerId),
+                Yield = row.Yield,
+                Scale = row.Scale,
+                ContractedAmountKg = row.Contracted
+            });
+        }
 
         foreach (var row in TechnologiesSeed())
+        {
             db.TechnologiesKpis.Add(new TechnologiesKpi
             {
                 Id = gid.Next(),
                 FarmerId = row.FarmerId,
                 CropSeasonId = row.Season,
                 CultureTypeCode = CultureFor(row.FarmerId),
-                HasLargeBaseRidgeWithMulch = row.Mulch,
-                HasBroadGrateFurnace = row.Furnace,
-                HasTechnologyPackageAdherence = row.Package,
-                HasStandardBarn = row.Barn
+                TechnologyId = row.TechnologyId
             });
+        }
 
         foreach (var row in EsgSeed())
+        {
             db.EsgKpis.Add(new EsgKpi
             {
                 Id = gid.Next(),
@@ -123,34 +148,66 @@ public static class DatabaseSeeder
                 CropSeasonId = row.Season,
                 CultureTypeCode = CultureFor(row.FarmerId),
                 ReforestationPercentage = row.Ref,
-                NativeForestPercentage = row.Native,
-                HasMinorIrregularity = row.Minor,
-                HasMajorIrregularity = row.Major
+                NativeForestPercentage = row.Native
             });
+        }
+
+        foreach (var row in EsgIrregularitySeed())
+        {
+            db.EsgIrregularityKpis.Add(new EsgIrregularityKpi
+            {
+                Id = gid.Next(),
+                FarmerId = row.FarmerId,
+                CropSeasonId = row.Season,
+                CultureTypeCode = CultureFor(row.FarmerId),
+                IrregularityTypeId = row.IrregularityTypeId
+            });
+        }
 
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static IEnumerable<(Guid FarmerId, int Season, int Delivered)> LoyaltySeed()
+    private static async Task SeedCatalogsAsync(AppDbContext db, CancellationToken cancellationToken)
     {
-        yield return (F900100, 2023, 92);
-        yield return (F900101, 2023, 91);
-        yield return (F900102, 2023, 93);
-        yield return (F900100, 2024, 92);
-        yield return (F900101, 2024, 91);
-        yield return (F900102, 2024, 93);
+        if (!await db.Technologies.AnyAsync(cancellationToken))
+        {
+            db.Technologies.AddRange(
+                new TechnologyCatalog { Id = 1, Name = "Large Base Ridge With Mulch" },
+                new TechnologyCatalog { Id = 2, Name = "Broad Grate Furnace" },
+                new TechnologyCatalog { Id = 3, Name = "Tecknology Package Adderence" },
+                new TechnologyCatalog { Id = 4, Name = "Standard Barn" });
+        }
+
+        if (!await db.IrregularityTypes.AnyAsync(cancellationToken))
+        {
+            db.IrregularityTypes.AddRange(
+                new IrregularityTypeCatalog { Id = 1, Name = "Minor Irregularity" },
+                new IrregularityTypeCatalog { Id = 2, Name = "Major Irregularity" });
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static IEnumerable<(Guid FarmerId, int Season, int Pct, int Delivered, int Contracted)> LoyaltySeed()
+    {
+        yield return (F900100, 2023, 92, 9200, 10000);
+        yield return (F900101, 2023, 91, 9100, 10000);
+        yield return (F900102, 2023, 93, 9300, 10000);
+        yield return (F900100, 2024, 92, 9200, 10000);
+        yield return (F900101, 2024, 91, 9100, 10000);
+        yield return (F900102, 2024, 93, 9300, 10000);
 
         foreach (var s in new[] { 2025, 2026 })
         {
-            yield return (F900100, s, 92);
-            yield return (F900101, s, 91);
-            yield return (F900102, s, 93);
-            yield return (F900201, s, 80);
-            yield return (F900202, s, 85);
-            yield return (F900203, s, 89);
-            yield return (F900301, s, 91);
-            yield return (F900302, s, 84);
-            yield return (F900303, s, 95);
+            yield return (F900100, s, 92, 9200, 10000);
+            yield return (F900101, s, 91, 9100, 10000);
+            yield return (F900102, s, 93, 9300, 10000);
+            yield return (F900201, s, 80, 8000, 10000);
+            yield return (F900202, s, 85, 8500, 10000);
+            yield return (F900203, s, 89, 8900, 10000);
+            yield return (F900301, s, 91, 9100, 10000);
+            yield return (F900302, s, 84, 8400, 10000);
+            yield return (F900303, s, 95, 9500, 10000);
         }
     }
 
@@ -164,9 +221,7 @@ public static class DatabaseSeeder
         }
 
         foreach (var f in new[] { F900201, F900202, F900203, F900301, F900302, F900303 })
-        {
             yield return (f, 2025, 70, false, false);
-        }
 
         yield return (F900100, 2026, 92, false, false);
         yield return (F900101, 2026, 91, false, false);
@@ -189,9 +244,7 @@ public static class DatabaseSeeder
         }
 
         foreach (var f in new[] { F900201, F900202, F900203, F900301, F900302, F900303 })
-        {
             yield return (f, 2025, 70, false);
-        }
 
         yield return (F900100, 2026, 92, false);
         yield return (F900101, 2026, 91, false);
@@ -204,90 +257,90 @@ public static class DatabaseSeeder
         yield return (F900303, 2026, 50, false);
     }
 
-    private static IEnumerable<(Guid FarmerId, int Season, int Yield)> YieldSeed()
+    private static IEnumerable<(Guid FarmerId, int Season, int Yield, int Scale, int Contracted)> YieldAndScaleSeed()
     {
         foreach (var s in new[] { 2023, 2024, 2025, 2026 })
         {
-            yield return (F900100, s, 3000);
-            yield return (F900101, s, 3000);
-            yield return (F900102, s, 3000);
+            yield return (F900100, s, 3000, 6, 18000);
+            yield return (F900101, s, 3000, 6, 18000);
+            yield return (F900102, s, 3000, 6, 18000);
         }
 
         foreach (var s in new[] { 2025, 2026 })
         {
-            yield return (F900201, s, 2600);
-            yield return (F900202, s, 2600);
-            yield return (F900203, s, 2400);
-            yield return (F900301, s, 2600);
-            yield return (F900302, s, 2600);
-            yield return (F900303, s, 2400);
+            yield return (F900201, s, 2600, 4, 10400);
+            yield return (F900202, s, 2600, 4, 10400);
+            yield return (F900203, s, 2400, 2, 4800);
+            yield return (F900301, s, 2600, 4, 10400);
+            yield return (F900302, s, 2600, 4, 10400);
+            yield return (F900303, s, 2400, 2, 4800);
         }
     }
 
-    private static IEnumerable<(Guid FarmerId, int Season, int Scale)> ScaleSeed()
+    private static IEnumerable<(Guid FarmerId, int Season, int TechnologyId)> TechnologiesSeed()
     {
         foreach (var s in new[] { 2023, 2024, 2025, 2026 })
         {
-            yield return (F900100, s, 6);
-            yield return (F900101, s, 6);
-            yield return (F900102, s, 6);
+            foreach (var f in new[] { F900100, F900101, F900102 })
+            {
+                yield return (f, s, 1);
+                yield return (f, s, 2);
+                yield return (f, s, 3);
+            }
         }
 
         foreach (var s in new[] { 2025, 2026 })
         {
-            yield return (F900201, s, 4);
-            yield return (F900202, s, 4);
-            yield return (F900203, s, 2);
+            yield return (F900201, s, 1);
+            yield return (F900201, s, 2);
+            yield return (F900202, s, 1);
+            yield return (F900202, s, 2);
+            yield return (F900301, s, 1);
             yield return (F900301, s, 4);
+            yield return (F900302, s, 1);
             yield return (F900302, s, 4);
-            yield return (F900303, s, 2);
         }
     }
 
-    private static IEnumerable<(Guid FarmerId, int Season, bool Mulch, bool Furnace, bool Package, bool Barn)> TechnologiesSeed()
+    private static IEnumerable<(Guid FarmerId, int Season, int Ref, int Native)> EsgSeed()
     {
         foreach (var s in new[] { 2023, 2024, 2025, 2026 })
         {
-            yield return (F900100, s, true, true, true, false);
-            yield return (F900101, s, true, true, true, false);
-            yield return (F900102, s, true, true, true, false);
+            yield return (F900100, s, 20, 18);
+            yield return (F900101, s, 20, 18);
+            yield return (F900102, s, 20, 18);
         }
 
         foreach (var s in new[] { 2025, 2026 })
         {
-            yield return (F900201, s, true, true, false, true);
-            yield return (F900202, s, true, true, false, true);
-            yield return (F900203, s, false, false, false, false);
-            yield return (F900301, s, true, false, false, false);
-            yield return (F900302, s, true, false, false, false);
-            yield return (F900303, s, false, false, false, false);
+            yield return (F900201, s, 10, 8);
+            yield return (F900202, s, 10, 8);
+            yield return (F900203, s, 5, 4);
+            yield return (F900301, s, 10, 8);
+            yield return (F900302, s, 10, 8);
+            yield return (F900303, s, 5, 4);
         }
     }
 
-    private static IEnumerable<(Guid FarmerId, int Season, int Ref, int Native, bool Minor, bool Major)> EsgSeed()
+    private static IEnumerable<(Guid FarmerId, int Season, int IrregularityTypeId)> EsgIrregularitySeed()
     {
-        foreach (var s in new[] { 2023, 2024, 2025, 2026 })
-        {
-            yield return (F900100, s, 20, 18, false, false);
-            yield return (F900101, s, 20, 18, false, false);
-            yield return (F900102, s, 20, 18, false, false);
-        }
-
         foreach (var s in new[] { 2025, 2026 })
         {
-            yield return (F900201, s, 10, 8, true, false);
-            yield return (F900202, s, 10, 8, true, false);
-            yield return (F900203, s, 5, 4, false, true);
-            yield return (F900301, s, 10, 8, true, false);
-            yield return (F900302, s, 10, 8, true, false);
-            yield return (F900303, s, 5, 4, false, true);
+            yield return (F900201, s, 1);
+            yield return (F900202, s, 1);
+            yield return (F900301, s, 1);
+            yield return (F900302, s, 1);
         }
+
+        yield return (F900203, 2025, 2);
+        yield return (F900303, 2025, 2);
+        yield return (F900203, 2026, 2);
+        yield return (F900303, 2026, 2);
     }
 
     private static string CultureFor(Guid farmerId) =>
         BurleyFarmerIds.Contains(farmerId) ? "BLY" : "FCV";
 
-    /// <summary>Deterministic GUID sequence for seed rows.</summary>
     private sealed class SequentialGuidGenerator
     {
         private Guid _current;

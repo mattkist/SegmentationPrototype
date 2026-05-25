@@ -42,6 +42,22 @@ public sealed class SegmentationSimulationFarmerDto
     public bool NonExclusiveFarmer { get; init; }
     public Guid? SegmentationConfigurationSegmentId { get; init; }
     public string? SegmentName { get; init; }
+
+    /// <summary>True when the farmer had no contract in the season immediately before the simulation target.</summary>
+    public bool IsNewFarmer { get; init; }
+}
+
+public sealed class SegmentShareDto
+{
+    public required string SegmentName { get; init; }
+    public int FarmerCount { get; init; }
+    public decimal Percentage { get; init; }
+}
+
+public sealed class CultureTypeSegmentDistributionDto
+{
+    public required string CultureTypeCode { get; init; }
+    public required IReadOnlyList<SegmentShareDto> Segments { get; init; }
 }
 
 public sealed class SegmentationSimulationDetailDto
@@ -55,4 +71,6 @@ public sealed class SegmentationSimulationDetailDto
     public DateTime SimulationDate { get; init; }
     public required string Status { get; init; }
     public required IReadOnlyList<SegmentationSimulationFarmerDto> Farmers { get; init; }
+    public required IReadOnlyList<SegmentShareDto> OverallSegmentDistribution { get; init; }
+    public required IReadOnlyList<CultureTypeSegmentDistributionDto> SegmentDistributionByCultureType { get; init; }
 }

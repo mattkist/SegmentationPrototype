@@ -1,6 +1,6 @@
 namespace Segmentation.Domain.Entities;
 
-public class TechnologiesKpi
+public class EsgIrregularityKpi
 {
     public Guid Id { get; set; }
 
@@ -13,6 +13,6 @@ public class TechnologiesKpi
     public required string CultureTypeCode { get; set; }
     public CultureType CultureType { get; set; } = null!;
 
-    public int TechnologyId { get; set; }
-    public TechnologyCatalog Technology { get; set; } = null!;
+    public int IrregularityTypeId { get; set; }
+    public IrregularityTypeCatalog IrregularityType { get; set; } = null!;
 }

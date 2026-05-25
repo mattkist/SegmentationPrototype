@@ -10,11 +10,18 @@ public interface IKpiReadService
 
     Task<IReadOnlyList<FinancialKpiRowDto>> ListFinancialAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<YieldKpiRowDto>> ListYieldAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<ScaleKpiRowDto>> ListScaleAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<YieldAndScaleKpiRowDto>> ListYieldAndScaleAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<TechnologiesKpiRowDto>> ListTechnologiesAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<EsgKpiRowDto>> ListEsgAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<EsgIrregularityKpiRowDto>> ListEsgIrregularitiesAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default);
+}
+
+public interface IReferenceDataReadService
+{
+    Task<IReadOnlyList<TechnologyDto>> ListTechnologiesAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<IrregularityTypeDto>> ListIrregularityTypesAsync(CancellationToken cancellationToken = default);
 }

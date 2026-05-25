@@ -77,19 +77,15 @@ public static class SimulationFarmerScoring
 
         if (loyalty.SeasonQuantityRanges.Count == 0)
         {
+            var consolidatedDelivered = ConsolidatedDeliveryPercentage(selected, history);
             var bestHist = int.MinValue;
             var anyHist = false;
-            foreach (var season in selected)
+            foreach (var h in loyalty.HistoricalVolumeRanges)
             {
-                if (!history.LoyaltyDeliveredPctBySeason.TryGetValue(season, out var delivered))
+                if (consolidatedDelivered < h.MinimumDeliveryAmount || consolidatedDelivered > h.MaximumDeliveryAmount)
                     continue;
-                foreach (var h in loyalty.HistoricalVolumeRanges)
-                {
-                    if (delivered < h.MinimumDeliveryAmount || delivered > h.MaximumDeliveryAmount)
-                        continue;
-                    anyHist = true;
-                    bestHist = Math.Max(bestHist, h.Score);
-                }
+                anyHist = true;
+                bestHist = Math.Max(bestHist, h.Score);
             }
 
             return anyHist ? bestHist : 0;
@@ -99,7 +95,7 @@ public static class SimulationFarmerScoring
         foreach (var r in loyalty.SeasonQuantityRanges)
         {
             var plantingSeasonsWithData = selected.Count(season =>
-                history.LoyaltyDeliveredPctBySeason.ContainsKey(season));
+                history.LoyaltyBySeason.ContainsKey(season));
 
             if (plantingSeasonsWithData < r.PlantingCropSeasonAmount)
                 continue;
@@ -109,9 +105,10 @@ public static class SimulationFarmerScoring
                     r.DeliveryCropSeasonAmount,
                     season =>
                     {
-                        if (!history.LoyaltyDeliveredPctBySeason.TryGetValue(season, out var v))
+                        if (!history.LoyaltyBySeason.TryGetValue(season, out var snapshot))
                             return false;
-                        return v >= r.MinimumDeliveryAmount && v <= r.MaximumDeliveryAmount;
+                        var delivered = DeliveryPercentage(snapshot.DeliveredAmountKg, snapshot.ContractedAmountKg);
+                        return delivered >= r.MinimumDeliveryAmount && delivered <= r.MaximumDeliveryAmount;
                     }))
                 continue;
 
@@ -182,20 +179,17 @@ public static class SimulationFarmerScoring
         SimulationScoringContext context,
         FarmerKpiHistory history)
     {
-        var sum = 0;
         var season = context.LatestScopeCropSeasonId;
 
         if (!history.TechnologiesBySeason.TryGetValue(season, out var t))
             return 0;
 
-        if (t.HasLargeBaseRidgeWithMulch)
-            sum += technology.HasLargeBaseRidgeWithMulchScore;
-        if (t.HasBroadGrateFurnace)
-            sum += technology.HasBroadGrateFurnaceScore;
-        if (t.HasTechnologyPackageAdherence)
-            sum += technology.HasTechnologyPackageAdherenceScore;
-        if (t.HasStandardBarn)
-            sum += technology.HasStandardBarnScore;
+        var sum = 0;
+        foreach (var rule in technology.TechnologyScores)
+        {
+            if (rule.Score > 0 && t.TechnologyIds.Contains(rule.TechnologyId))
+                sum += rule.Score;
+        }
 
         return sum;
     }
@@ -212,18 +206,16 @@ public static class SimulationFarmerScoring
         {
             var add = kr.ReforestationPercentage * esg.ReforestationScorePerPercentualPoint;
             score += Math.Clamp(add, 0, esg.ReforestationMaximumScore);
-        }
 
-        if (history.EsgBySeason.TryGetValue(season, out var kn))
-        {
-            var add = kn.NativeForestPercentage * esg.NativeForestScorePerPercentualPoint;
+            add = kr.NativeForestPercentage * esg.NativeForestScorePerPercentualPoint;
             score += Math.Clamp(add, 0, esg.NativeForestMaximumScore);
-        }
 
-        if (history.EsgBySeason.TryGetValue(season, out var km) && km.HasMinorIrregularity)
-            score += esg.MinorIrregularityScore;
-        if (history.EsgBySeason.TryGetValue(season, out var kM) && kM.HasMajorIrregularity)
-            score += esg.MajorIrregularityScore;
+            foreach (var rule in esg.IrregularityScores)
+            {
+                if (rule.Score > 0 && kr.IrregularityTypeIds.Contains(rule.IrregularityTypeId))
+                    score += rule.Score;
+            }
+        }
 
         return score;
     }
@@ -234,12 +226,12 @@ public static class SimulationFarmerScoring
         FarmerKpiHistory history)
     {
         var season = context.LatestScopeCropSeasonId;
-        if (!history.YieldBySeason.TryGetValue(season, out var y))
+        if (!history.YieldAndScaleBySeason.TryGetValue(season, out var snapshot))
             return 0;
 
         foreach (var r in yield.Ranges)
         {
-            if (y >= r.Minimum && y <= r.Maximum)
+            if (snapshot.Yield >= r.Minimum && snapshot.Yield <= r.Maximum)
                 return r.Score;
         }
 
@@ -252,12 +244,12 @@ public static class SimulationFarmerScoring
         FarmerKpiHistory history)
     {
         var season = context.LatestScopeCropSeasonId;
-        if (!history.ScaleBySeason.TryGetValue(season, out var s))
+        if (!history.YieldAndScaleBySeason.TryGetValue(season, out var snapshot))
             return 0;
 
         foreach (var r in scale.Ranges)
         {
-            if (s >= r.Minimum && s <= r.Maximum)
+            if (snapshot.Scale >= r.Minimum && snapshot.Scale <= r.Maximum)
                 return r.Score;
         }
 
@@ -274,12 +266,23 @@ public static class SimulationFarmerScoring
             return 0;
 
         var seasonsWithYieldAndScale = selected
-            .Where(s => history.YieldBySeason.ContainsKey(s) && history.ScaleBySeason.ContainsKey(s))
+            .Where(s => history.YieldAndScaleBySeason.ContainsKey(s))
             .ToList();
 
         var plantingSeasonsWithData = seasonsWithYieldAndScale.Count;
         if (plantingSeasonsWithData == 0)
             return 0;
+
+        var totalContracted = seasonsWithYieldAndScale.Sum(s => history.YieldAndScaleBySeason[s].ContractedAmountKg);
+        var totalScale = seasonsWithYieldAndScale.Sum(s => history.YieldAndScaleBySeason[s].Scale);
+        if (totalScale == 0)
+            return 0;
+
+        var consolidatedYield = totalContracted / totalScale;
+        var avgModule = Math.Round(
+            seasonsWithYieldAndScale.Average(s => (decimal)history.YieldAndScaleBySeason[s].Scale),
+            1,
+            MidpointRounding.AwayFromZero);
 
         var matching = new List<YieldAndScaleRange>();
         foreach (var r in yieldAndScale.Ranges)
@@ -287,13 +290,7 @@ public static class SimulationFarmerScoring
             if (plantingSeasonsWithData < r.YieldAndScaleCropSeasonAmount)
                 continue;
 
-            var avgYield = (int)Math.Round(seasonsWithYieldAndScale.Average(s => history.YieldBySeason[s]));
-            var avgModule = Math.Round(
-                seasonsWithYieldAndScale.Average(s => (decimal)history.ScaleBySeason[s]),
-                1,
-                MidpointRounding.AwayFromZero);
-
-            if (avgYield < r.MinimumYield || avgYield > r.MaximumYield)
+            if (consolidatedYield < r.MinimumYield || consolidatedYield > r.MaximumYield)
                 continue;
             if (avgModule < r.MinimumModule || avgModule > r.MaximumModule)
                 continue;
@@ -305,6 +302,28 @@ public static class SimulationFarmerScoring
             return 0;
 
         return matching.OrderByDescending(r => r.YieldAndScaleCropSeasonAmount).First().Score;
+    }
+
+    private static int DeliveryPercentage(int deliveredAmountKg, int contractedAmountKg) =>
+        contractedAmountKg > 0
+            ? (int)Math.Round(deliveredAmountKg * 100m / contractedAmountKg, MidpointRounding.AwayFromZero)
+            : 0;
+
+    private static int ConsolidatedDeliveryPercentage(
+        IReadOnlyList<int> seasons,
+        FarmerKpiHistory history)
+    {
+        var delivered = 0;
+        var contracted = 0;
+        foreach (var season in seasons)
+        {
+            if (!history.LoyaltyBySeason.TryGetValue(season, out var snapshot))
+                continue;
+            delivered += snapshot.DeliveredAmountKg;
+            contracted += snapshot.ContractedAmountKg;
+        }
+
+        return DeliveryPercentage(delivered, contracted);
     }
 
     /// <summary>

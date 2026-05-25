@@ -170,7 +170,10 @@ export function ConfigurationEditorPage() {
     draftHydratedFromServer &&
     draft.segments.length > 0 &&
     draft.cultureTypes.length > 0 &&
-    draft.cultureTypes.every((ct) => deriveKpiMaxScores(ct).matchesMaximum)
+    draft.cultureTypes.every((ct) => {
+      const v = deriveKpiMaxScores(ct)
+      return v.matchesMaximum && v.allKpiRulesMatchConfigured
+    })
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">

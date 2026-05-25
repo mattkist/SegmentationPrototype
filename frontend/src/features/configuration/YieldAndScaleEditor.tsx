@@ -20,7 +20,7 @@ export function YieldAndScaleEditor({
     <section className="space-y-6">
       <SectionTitle
         title="Yield & Scale"
-        hint={`${hints.yieldAndScale}\n\nUses all selected simulation scope seasons (like Loyalty). Average yield and module (scale) are computed across seasons where both KPIs exist.`}
+        hint={`${hints.yieldAndScale}\n\nUses all scope seasons with YieldAndScale KPI rows. Average module = mean(scale); consolidated yield = sum(contracted kg) / sum(scale).`}
       />
 
       <section className="space-y-3">
@@ -54,7 +54,7 @@ export function YieldAndScaleEditor({
         </div>
         {ys.ranges.length === 0 && (
           <p className="text-xs text-ink-muted">
-            No ranges configured. Set relevance to 0% in KPI caps if you use separate Yield and Scale only.
+            No ranges configured. Set Yield & Scale max score to 0 in the KPI totals panel if this KPI is unused.
           </p>
         )}
         {ys.ranges.map((r, i) => (

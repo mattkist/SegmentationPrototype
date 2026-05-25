@@ -45,6 +45,16 @@ public sealed class SegmentationSimulationsController(ISegmentationSimulationSer
         }
     }
 
+    [HttpGet("{id:guid}/export.csv")]
+    public async Task<IActionResult> ExportCsvAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var bytes = await simulations.ExportCsvAsync(id, cancellationToken);
+        if (bytes is null)
+            return NotFound(new { message = "Segmentation simulation not found.", id });
+
+        return File(bytes, "text/csv", $"simulation-{id}.csv");
+    }
+
     [HttpPost("{id:guid}/accept-official")]
     public async Task<IActionResult> AcceptOfficialAsync(Guid id, CancellationToken cancellationToken)
     {

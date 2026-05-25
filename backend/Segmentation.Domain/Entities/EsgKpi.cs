@@ -19,8 +19,4 @@ public class EsgKpi
     /// Native forest percentage used by ESG scoring rules (prototype extension).
     /// </summary>
     public int NativeForestPercentage { get; set; }
-
-    public bool HasMinorIrregularity { get; set; }
-
-    public bool HasMajorIrregularity { get; set; }
 }

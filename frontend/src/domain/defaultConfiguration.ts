@@ -2,10 +2,9 @@ import type {
   CultureTypeConfigurationWriteDto,
   SaveSegmentationConfigurationDto,
 } from '../api/types'
-import { syncRelevancesFromCaps } from './kpiRelevanceCaps'
 
 export function createCultureTypeBlock(code: string): CultureTypeConfigurationWriteDto {
-  return syncRelevancesFromCaps({
+  return {
     cultureTypeCode: code,
     maximumScore: 100,
     segmentThresholds: [
@@ -14,14 +13,16 @@ export function createCultureTypeBlock(code: string): CultureTypeConfigurationWr
       { segmentName: 'Standard', rangeMin: null },
     ],
     loyalty: {
-      relevance: 0.15,
+      maxScore: 10,
+      relevance: 0.1,
       seasonQuantityRanges: [],
       historicalVolumeRanges: [
         { minimumDeliveryAmount: 0, maximumDeliveryAmount: 100, score: 10 },
       ],
     },
     quality: {
-      relevance: 0.15,
+      maxScore: 20,
+      relevance: 0.2,
       ntrmScore: 0,
       mixtureScore: 0,
       iqsRanges: [
@@ -29,6 +30,7 @@ export function createCultureTypeBlock(code: string): CultureTypeConfigurationWr
       ],
     },
     financial: {
+      maxScore: 15,
       relevance: 0.15,
       debtScore: 0,
       selfFundingRanges: [
@@ -36,34 +38,48 @@ export function createCultureTypeBlock(code: string): CultureTypeConfigurationWr
       ],
     },
     technology: {
-      relevance: 0.12,
-      hasLargeBaseRidgeWithMulchScore: 5,
-      hasBroadGrateFurnaceScore: 5,
-      hasTechnologyPackageAdherenceScore: 5,
-      hasStandardBarnScore: 0,
+      maxScore: 15,
+      relevance: 0.15,
+      technologyScores: [
+        { technologyId: 1, score: 5 },
+        { technologyId: 2, score: 5 },
+        { technologyId: 3, score: 5 },
+      ],
     },
     esg: {
-      relevance: 0.13,
+      maxScore: 20,
+      relevance: 0.2,
       reforestationScorePerPercentualPoint: 1,
       reforestationMaximumScore: 10,
       nativeForestScorePerPercentualPoint: 1,
       nativeForestMaximumScore: 10,
-      minorIrregularityScore: 0,
-      majorIrregularityScore: 0,
+      irregularityScores: [],
     },
     yield: {
-      relevance: 0.15,
-      ranges: [{ minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 10 }],
-    },
-    scale: {
-      relevance: 0.15,
-      ranges: [{ minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 10 }],
-    },
-    yieldAndScale: {
+      maxScore: 0,
       relevance: 0,
       ranges: [],
     },
-  })
+    scale: {
+      maxScore: 0,
+      relevance: 0,
+      ranges: [],
+    },
+    yieldAndScale: {
+      maxScore: 20,
+      relevance: 0.2,
+      ranges: [
+        {
+          yieldAndScaleCropSeasonAmount: 1,
+          minimumYield: 0,
+          maximumYield: 999999,
+          minimumModule: 0,
+          maximumModule: 999999,
+          score: 10,
+        },
+      ],
+    },
+  }
 }
 
 /** Balanced template with header segments and one FCV culture-type block. */

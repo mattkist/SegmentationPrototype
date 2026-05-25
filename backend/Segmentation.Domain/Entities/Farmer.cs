@@ -17,10 +17,10 @@ public class Farmer
     public ICollection<LoyaltyKpi> LoyaltyKpis { get; set; } = new List<LoyaltyKpi>();
     public ICollection<QualityKpi> QualityKpis { get; set; } = new List<QualityKpi>();
     public ICollection<FinancialKpi> FinancialKpis { get; set; } = new List<FinancialKpi>();
-    public ICollection<YieldKpi> YieldKpis { get; set; } = new List<YieldKpi>();
-    public ICollection<ScaleKpi> ScaleKpis { get; set; } = new List<ScaleKpi>();
+    public ICollection<YieldAndScaleKpi> YieldAndScaleKpis { get; set; } = new List<YieldAndScaleKpi>();
     public ICollection<TechnologiesKpi> TechnologiesKpis { get; set; } = new List<TechnologiesKpi>();
     public ICollection<EsgKpi> EsgKpis { get; set; } = new List<EsgKpi>();
+    public ICollection<EsgIrregularityKpi> EsgIrregularityKpis { get; set; } = new List<EsgIrregularityKpi>();
     public ICollection<SegmentationSimulationFarmer> SimulationResults { get; set; } = new List<SegmentationSimulationFarmer>();
     public ICollection<FarmerSegmentation> Segmentations { get; set; } = new List<FarmerSegmentation>();
 }

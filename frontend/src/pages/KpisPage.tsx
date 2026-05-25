@@ -3,14 +3,14 @@ import * as Tabs from '@radix-ui/react-tabs'
 import { useState } from 'react'
 import { apiGet, apiPostFormImport, ApiRequestError } from '../api/client'
 import type {
+  EsgIrregularityKpiRowDto,
   EsgKpiRowDto,
   FinancialKpiRowDto,
   KpiImportResultDto,
   LoyaltyKpiRowDto,
   QualityKpiRowDto,
-  ScaleKpiRowDto,
   TechnologiesKpiRowDto,
-  YieldKpiRowDto,
+  YieldAndScaleKpiRowDto,
 } from '../api/types'
 import { useCropSeason } from '../context/CropSeasonContext'
 import { Hint } from '../components/Hint'
@@ -21,10 +21,10 @@ const tabs = [
   { id: 'loyalty', label: 'Loyalty', hint: hints.csvLoyalty },
   { id: 'quality', label: 'Quality', hint: hints.csvQuality },
   { id: 'financial', label: 'Financial', hint: hints.csvFinancial },
-  { id: 'yield', label: 'Yield', hint: hints.csvYield },
-  { id: 'scale', label: 'Scale', hint: hints.csvScale },
+  { id: 'yield-and-scale', label: 'Yield & Scale', hint: hints.csvYieldAndScale },
   { id: 'technologies', label: 'Technologies', hint: hints.csvTechnologies },
   { id: 'esg', label: 'ESG', hint: hints.csvEsg },
+  { id: 'esg-irregularities', label: 'ESG irregularities', hint: hints.csvEsgIrregularities },
 ] as const
 
 type TabId = (typeof tabs)[number]['id']
@@ -53,16 +53,11 @@ export function KpisPage() {
     queryFn: () => apiGet<FinancialKpiRowDto[]>(`/api/Kpis/financial?cropSeasonId=${seasonId}`),
   })
 
-  const yieldQ = useQuery({
-    queryKey: ['kpi', 'yield', seasonId],
-    enabled: seasonId !== null && tab === 'yield',
-    queryFn: () => apiGet<YieldKpiRowDto[]>(`/api/Kpis/yield?cropSeasonId=${seasonId}`),
-  })
-
-  const scale = useQuery({
-    queryKey: ['kpi', 'scale', seasonId],
-    enabled: seasonId !== null && tab === 'scale',
-    queryFn: () => apiGet<ScaleKpiRowDto[]>(`/api/Kpis/scale?cropSeasonId=${seasonId}`),
+  const yieldAndScale = useQuery({
+    queryKey: ['kpi', 'yield-and-scale', seasonId],
+    enabled: seasonId !== null && tab === 'yield-and-scale',
+    queryFn: () =>
+      apiGet<YieldAndScaleKpiRowDto[]>(`/api/Kpis/yield-and-scale?cropSeasonId=${seasonId}`),
   })
 
   const technologies = useQuery({
@@ -76,6 +71,15 @@ export function KpisPage() {
     queryKey: ['kpi', 'esg', seasonId],
     enabled: seasonId !== null && tab === 'esg',
     queryFn: () => apiGet<EsgKpiRowDto[]>(`/api/Kpis/esg?cropSeasonId=${seasonId}`),
+  })
+
+  const esgIrregularities = useQuery({
+    queryKey: ['kpi', 'esg-irregularities', seasonId],
+    enabled: seasonId !== null && tab === 'esg-irregularities',
+    queryFn: () =>
+      apiGet<EsgIrregularityKpiRowDto[]>(
+        `/api/Kpis/esg-irregularities?cropSeasonId=${seasonId}`,
+      ),
   })
 
   const importMutation = useMutation({
@@ -171,11 +175,12 @@ export function KpisPage() {
         <Tabs.Content value="financial" className="mt-4 outline-none">
           <KpiTable rows={financial.data} loading={financial.isLoading} error={financial.error} />
         </Tabs.Content>
-        <Tabs.Content value="yield" className="mt-4 outline-none">
-          <KpiTable rows={yieldQ.data} loading={yieldQ.isLoading} error={yieldQ.error} />
-        </Tabs.Content>
-        <Tabs.Content value="scale" className="mt-4 outline-none">
-          <KpiTable rows={scale.data} loading={scale.isLoading} error={scale.error} />
+        <Tabs.Content value="yield-and-scale" className="mt-4 outline-none">
+          <KpiTable
+            rows={yieldAndScale.data}
+            loading={yieldAndScale.isLoading}
+            error={yieldAndScale.error}
+          />
         </Tabs.Content>
         <Tabs.Content value="technologies" className="mt-4 outline-none">
           <KpiTable
@@ -186,6 +191,13 @@ export function KpisPage() {
         </Tabs.Content>
         <Tabs.Content value="esg" className="mt-4 outline-none">
           <KpiTable rows={esg.data} loading={esg.isLoading} error={esg.error} />
+        </Tabs.Content>
+        <Tabs.Content value="esg-irregularities" className="mt-4 outline-none">
+          <KpiTable
+            rows={esgIrregularities.data}
+            loading={esgIrregularities.isLoading}
+            error={esgIrregularities.error}
+          />
         </Tabs.Content>
       </Tabs.Root>
     </div>
@@ -200,6 +212,12 @@ function kpiTableColumnKeys(row: object): string[] {
 
 function kpiTableColumnLabel(key: string): string {
   if (key === 'cropSeasonCode') return 'Crop season'
+  if (key === 'cultureTypeCode') return 'Culture type'
+  if (key === 'technologyName') return 'Technology'
+  if (key === 'irregularityTypeName') return 'Irregularity'
+  if (key === 'deliveredAmountKg') return 'Delivered kg'
+  if (key === 'contractedAmountKg') return 'Contracted kg'
+  if (key === 'deliveredPercentage') return 'Delivered %'
   return key
 }
 

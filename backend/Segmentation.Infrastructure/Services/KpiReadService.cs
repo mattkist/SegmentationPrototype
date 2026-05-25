@@ -14,7 +14,14 @@ public sealed class KpiReadService(AppDbContext db) : IKpiReadService
             query = query.Where(k => k.CultureTypeCode == cultureTypeCode);
         return await query
             .OrderBy(k => k.Farmer.Code)
-            .Select(k => new LoyaltyKpiRowDto(k.Farmer.Code, k.CropSeasonId, k.CropSeason.Code, k.CultureTypeCode, k.DeliveredPercentage))
+            .Select(k => new LoyaltyKpiRowDto(
+                k.Farmer.Code,
+                k.CropSeasonId,
+                k.CropSeason.Code,
+                k.CultureTypeCode,
+                k.DeliveredPercentage,
+                k.DeliveredAmountKg,
+                k.ContractedAmountKg))
             .ToListAsync(cancellationToken);
     }
 
@@ -40,25 +47,21 @@ public sealed class KpiReadService(AppDbContext db) : IKpiReadService
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<YieldKpiRowDto>> ListYieldAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<YieldAndScaleKpiRowDto>> ListYieldAndScaleAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default)
     {
-        var query = db.YieldKpis.AsNoTracking().Where(k => k.CropSeasonId == cropSeasonId);
+        var query = db.YieldAndScaleKpis.AsNoTracking().Where(k => k.CropSeasonId == cropSeasonId);
         if (cultureTypeCode is not null)
             query = query.Where(k => k.CultureTypeCode == cultureTypeCode);
         return await query
             .OrderBy(k => k.Farmer.Code)
-            .Select(k => new YieldKpiRowDto(k.Farmer.Code, k.CropSeasonId, k.CropSeason.Code, k.CultureTypeCode, k.Yield))
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<ScaleKpiRowDto>> ListScaleAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default)
-    {
-        var query = db.ScaleKpis.AsNoTracking().Where(k => k.CropSeasonId == cropSeasonId);
-        if (cultureTypeCode is not null)
-            query = query.Where(k => k.CultureTypeCode == cultureTypeCode);
-        return await query
-            .OrderBy(k => k.Farmer.Code)
-            .Select(k => new ScaleKpiRowDto(k.Farmer.Code, k.CropSeasonId, k.CropSeason.Code, k.CultureTypeCode, k.Scale))
+            .Select(k => new YieldAndScaleKpiRowDto(
+                k.Farmer.Code,
+                k.CropSeasonId,
+                k.CropSeason.Code,
+                k.CultureTypeCode,
+                k.Yield,
+                k.Scale,
+                k.ContractedAmountKg))
             .ToListAsync(cancellationToken);
     }
 
@@ -69,7 +72,14 @@ public sealed class KpiReadService(AppDbContext db) : IKpiReadService
             query = query.Where(k => k.CultureTypeCode == cultureTypeCode);
         return await query
             .OrderBy(k => k.Farmer.Code)
-            .Select(k => new TechnologiesKpiRowDto(k.Farmer.Code, k.CropSeasonId, k.CropSeason.Code, k.CultureTypeCode, k.HasLargeBaseRidgeWithMulch, k.HasBroadGrateFurnace, k.HasTechnologyPackageAdherence, k.HasStandardBarn))
+            .ThenBy(k => k.TechnologyId)
+            .Select(k => new TechnologiesKpiRowDto(
+                k.Farmer.Code,
+                k.CropSeasonId,
+                k.CropSeason.Code,
+                k.CultureTypeCode,
+                k.TechnologyId,
+                k.Technology.Name))
             .ToListAsync(cancellationToken);
     }
 
@@ -80,7 +90,46 @@ public sealed class KpiReadService(AppDbContext db) : IKpiReadService
             query = query.Where(k => k.CultureTypeCode == cultureTypeCode);
         return await query
             .OrderBy(k => k.Farmer.Code)
-            .Select(k => new EsgKpiRowDto(k.Farmer.Code, k.CropSeasonId, k.CropSeason.Code, k.CultureTypeCode, k.ReforestationPercentage, k.NativeForestPercentage, k.HasMinorIrregularity, k.HasMajorIrregularity))
+            .Select(k => new EsgKpiRowDto(
+                k.Farmer.Code,
+                k.CropSeasonId,
+                k.CropSeason.Code,
+                k.CultureTypeCode,
+                k.ReforestationPercentage,
+                k.NativeForestPercentage))
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<EsgIrregularityKpiRowDto>> ListEsgIrregularitiesAsync(int cropSeasonId, string? cultureTypeCode = null, CancellationToken cancellationToken = default)
+    {
+        var query = db.EsgIrregularityKpis.AsNoTracking().Where(k => k.CropSeasonId == cropSeasonId);
+        if (cultureTypeCode is not null)
+            query = query.Where(k => k.CultureTypeCode == cultureTypeCode);
+        return await query
+            .OrderBy(k => k.Farmer.Code)
+            .ThenBy(k => k.IrregularityTypeId)
+            .Select(k => new EsgIrregularityKpiRowDto(
+                k.Farmer.Code,
+                k.CropSeasonId,
+                k.CropSeason.Code,
+                k.CultureTypeCode,
+                k.IrregularityTypeId,
+                k.IrregularityType.Name))
+            .ToListAsync(cancellationToken);
+    }
+}
+
+public sealed class ReferenceDataReadService(AppDbContext db) : IReferenceDataReadService
+{
+    public async Task<IReadOnlyList<TechnologyDto>> ListTechnologiesAsync(CancellationToken cancellationToken = default) =>
+        await db.Technologies.AsNoTracking()
+            .OrderBy(t => t.Id)
+            .Select(t => new TechnologyDto(t.Id, t.Name))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<IrregularityTypeDto>> ListIrregularityTypesAsync(CancellationToken cancellationToken = default) =>
+        await db.IrregularityTypes.AsNoTracking()
+            .OrderBy(t => t.Id)
+            .Select(t => new IrregularityTypeDto(t.Id, t.Name))
+            .ToListAsync(cancellationToken);
 }

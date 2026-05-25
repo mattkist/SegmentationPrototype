@@ -49,17 +49,20 @@ export interface FarmerKpisForSeasonDto {
   loyalty: LoyaltyKpiRowDto | null
   quality: QualityKpiRowDto | null
   financial: FinancialKpiRowDto | null
-  yield: YieldKpiRowDto | null
-  scale: ScaleKpiRowDto | null
-  technologies: TechnologiesKpiRowDto | null
+  yieldAndScale: YieldAndScaleKpiRowDto | null
+  technologies: TechnologiesKpiRowDto[]
   esg: EsgKpiRowDto | null
+  esgIrregularities: EsgIrregularityKpiRowDto[]
 }
 
 export interface LoyaltyKpiRowDto {
   farmerCode: string
   cropSeasonId: number
   cropSeasonCode: string
+  cultureTypeCode: string
   deliveredPercentage: number
+  deliveredAmountKg: number
+  contractedAmountKg: number
 }
 
 export interface QualityKpiRowDto {
@@ -79,37 +82,51 @@ export interface FinancialKpiRowDto {
   haveDebt: boolean
 }
 
-export interface YieldKpiRowDto {
+export interface YieldAndScaleKpiRowDto {
   farmerCode: string
   cropSeasonId: number
   cropSeasonCode: string
+  cultureTypeCode: string
   yield: number
-}
-
-export interface ScaleKpiRowDto {
-  farmerCode: string
-  cropSeasonId: number
-  cropSeasonCode: string
   scale: number
+  contractedAmountKg: number
 }
 
 export interface TechnologiesKpiRowDto {
   farmerCode: string
   cropSeasonId: number
   cropSeasonCode: string
-  hasLargeBaseRidgeWithMulch: boolean
-  hasBroadGrateFurnace: boolean
-  hasTechnologyPackageAdherence: boolean
+  cultureTypeCode: string
+  technologyId: number
+  technologyName: string
 }
 
 export interface EsgKpiRowDto {
   farmerCode: string
   cropSeasonId: number
   cropSeasonCode: string
+  cultureTypeCode: string
   reforestationPercentage: number
   nativeForestPercentage: number
-  hasMinorIrregularity: boolean
-  hasMajorIrregularity: boolean
+}
+
+export interface EsgIrregularityKpiRowDto {
+  farmerCode: string
+  cropSeasonId: number
+  cropSeasonCode: string
+  cultureTypeCode: string
+  irregularityTypeId: number
+  irregularityTypeName: string
+}
+
+export interface TechnologyDto {
+  id: number
+  name: string
+}
+
+export interface IrregularityTypeDto {
+  id: number
+  name: string
 }
 
 export interface KpiImportResultDto {
@@ -154,14 +171,13 @@ export interface LoyaltyHistoricalVolumeRangeDto {
 }
 
 export interface SegmentationLoyaltyWriteDto {
+  maxScore: number
   relevance: number
   seasonQuantityRanges: LoyaltySeasonQuantityRangeDto[]
   historicalVolumeRanges: LoyaltyHistoricalVolumeRangeDto[]
 }
 
-export interface SegmentationLoyaltyDetailDto extends SegmentationLoyaltyWriteDto {
-  maxScore: number
-}
+export interface SegmentationLoyaltyDetailDto extends SegmentationLoyaltyWriteDto {}
 
 export interface QualityIqsRangeDto {
   minimum: number
@@ -171,15 +187,14 @@ export interface QualityIqsRangeDto {
 }
 
 export interface SegmentationQualityWriteDto {
+  maxScore: number
   relevance: number
   ntrmScore: number
   mixtureScore: number
   iqsRanges: QualityIqsRangeDto[]
 }
 
-export interface SegmentationQualityDetailDto extends SegmentationQualityWriteDto {
-  maxScore: number
-}
+export interface SegmentationQualityDetailDto extends SegmentationQualityWriteDto {}
 
 export interface FinancialSelfFundingRangeDto {
   minimum: number
@@ -189,40 +204,43 @@ export interface FinancialSelfFundingRangeDto {
 }
 
 export interface SegmentationFinancialWriteDto {
+  maxScore: number
   relevance: number
   debtScore: number
   selfFundingRanges: FinancialSelfFundingRangeDto[]
 }
 
-export interface SegmentationFinancialDetailDto extends SegmentationFinancialWriteDto {
-  maxScore: number
+export interface SegmentationFinancialDetailDto extends SegmentationFinancialWriteDto {}
+
+export interface TechnologyScoreDto {
+  technologyId: number
+  score: number
 }
 
 export interface SegmentationTechnologyWriteDto {
+  maxScore: number
   relevance: number
-  hasLargeBaseRidgeWithMulchScore: number
-  hasBroadGrateFurnaceScore: number
-  hasTechnologyPackageAdherenceScore: number
-  hasStandardBarnScore: number
+  technologyScores: TechnologyScoreDto[]
 }
 
-export interface SegmentationTechnologyDetailDto extends SegmentationTechnologyWriteDto {
-  maxScore: number
+export interface SegmentationTechnologyDetailDto extends SegmentationTechnologyWriteDto {}
+
+export interface EsgIrregularityScoreDto {
+  irregularityTypeId: number
+  score: number
 }
 
 export interface SegmentationEsgWriteDto {
+  maxScore: number
   relevance: number
   reforestationScorePerPercentualPoint: number
   reforestationMaximumScore: number
   nativeForestScorePerPercentualPoint: number
   nativeForestMaximumScore: number
-  minorIrregularityScore: number
-  majorIrregularityScore: number
+  irregularityScores: EsgIrregularityScoreDto[]
 }
 
-export interface SegmentationEsgDetailDto extends SegmentationEsgWriteDto {
-  maxScore: number
-}
+export interface SegmentationEsgDetailDto extends SegmentationEsgWriteDto {}
 
 export interface YieldRangeDto {
   minimum: number
@@ -232,13 +250,12 @@ export interface YieldRangeDto {
 }
 
 export interface SegmentationYieldWriteDto {
+  maxScore: number
   relevance: number
   ranges: YieldRangeDto[]
 }
 
-export interface SegmentationYieldDetailDto extends SegmentationYieldWriteDto {
-  maxScore: number
-}
+export interface SegmentationYieldDetailDto extends SegmentationYieldWriteDto {}
 
 export interface ScaleRangeDto {
   minimum: number
@@ -248,13 +265,12 @@ export interface ScaleRangeDto {
 }
 
 export interface SegmentationScaleWriteDto {
+  maxScore: number
   relevance: number
   ranges: ScaleRangeDto[]
 }
 
-export interface SegmentationScaleDetailDto extends SegmentationScaleWriteDto {
-  maxScore: number
-}
+export interface SegmentationScaleDetailDto extends SegmentationScaleWriteDto {}
 
 export interface YieldAndScaleRangeDto {
   yieldAndScaleCropSeasonAmount: number
@@ -266,13 +282,12 @@ export interface YieldAndScaleRangeDto {
 }
 
 export interface SegmentationYieldAndScaleWriteDto {
+  maxScore: number
   relevance: number
   ranges: YieldAndScaleRangeDto[]
 }
 
-export interface SegmentationYieldAndScaleDetailDto extends SegmentationYieldAndScaleWriteDto {
-  maxScore: number
-}
+export interface SegmentationYieldAndScaleDetailDto extends SegmentationYieldAndScaleWriteDto {}
 
 export interface CultureTypeConfigurationDetailDto {
   id?: string | null
@@ -352,6 +367,18 @@ export interface SegmentationSimulationFarmerDto {
   nonExclusiveFarmer: boolean
   segmentationConfigurationSegmentId: string | null
   segmentName: string | null
+  isNewFarmer: boolean
+}
+
+export interface SegmentShareDto {
+  segmentName: string
+  farmerCount: number
+  percentage: number
+}
+
+export interface CultureTypeSegmentDistributionDto {
+  cultureTypeCode: string
+  segments: SegmentShareDto[]
 }
 
 export interface SegmentationSimulationDetailDto {
@@ -364,6 +391,8 @@ export interface SegmentationSimulationDetailDto {
   simulationDate: string
   status: string
   farmers: SegmentationSimulationFarmerDto[]
+  overallSegmentDistribution: SegmentShareDto[]
+  segmentDistributionByCultureType: CultureTypeSegmentDistributionDto[]
 }
 
 export interface ApiErrorBody {

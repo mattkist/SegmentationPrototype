@@ -162,6 +162,12 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             await db.YieldAndScaleRanges
                 .Where(r => r.SegmentationConfigurationCultureTypeId == cultureTypeId)
                 .ExecuteDeleteAsync(cancellationToken);
+            await db.SegmentationConfigurationTechnologyScores
+                .Where(r => r.SegmentationConfigurationCultureTypeId == cultureTypeId)
+                .ExecuteDeleteAsync(cancellationToken);
+            await db.SegmentationConfigurationEsgIrregularityScores
+                .Where(r => r.SegmentationConfigurationCultureTypeId == cultureTypeId)
+                .ExecuteDeleteAsync(cancellationToken);
         }
     }
 
@@ -174,8 +180,8 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Loyalty)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Quality)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Financial)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Technology)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Esg)
+            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Technology)!.ThenInclude(t => t!.TechnologyScores)
+            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Esg)!.ThenInclude(e => e!.IrregularityScores)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Yield)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Scale)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.YieldAndScale)
@@ -195,8 +201,8 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Loyalty)!.ThenInclude(l => l!.HistoricalVolumeRanges)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Quality)!.ThenInclude(q => q!.IqsRanges)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Financial)!.ThenInclude(f => f!.SelfFundingRanges)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Technology)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Esg)
+            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Technology)!.ThenInclude(t => t!.TechnologyScores)
+            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Esg)!.ThenInclude(e => e!.IrregularityScores)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Yield)!.ThenInclude(y => y!.Ranges)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Scale)!.ThenInclude(s => s!.Ranges)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.YieldAndScale)!.ThenInclude(ys => ys!.Ranges);
@@ -217,7 +223,8 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
                 throw new SegmentationConfigurationValidationException(
                     validation.ErrorMessage ?? "Invalid configuration.",
                     validation.SumOfKpiMaxScores,
-                    ct.MaximumScore);
+                    ct.MaximumScore,
+                    validation.Errors);
             }
         }
     }
@@ -395,6 +402,8 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         DetachAllTracked<YieldRange>();
         DetachAllTracked<ScaleRange>();
         DetachAllTracked<YieldAndScaleRange>();
+        DetachAllTracked<SegmentationConfigurationTechnologyScore>();
+        DetachAllTracked<SegmentationConfigurationEsgIrregularityScore>();
     }
 
     private void DetachAllTracked<T>() where T : class
@@ -417,7 +426,9 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
                 FinancialSelfFundingRange or
                 YieldRange or
                 ScaleRange or
-                YieldAndScaleRange))
+                YieldAndScaleRange or
+                SegmentationConfigurationTechnologyScore or
+                SegmentationConfigurationEsgIrregularityScore))
                 continue;
 
             if (entry.State == EntityState.Modified || entry.State == EntityState.Unchanged)
@@ -439,6 +450,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         var cultureTypeId = ct.Id;
 
         ct.Loyalty ??= new SegmentationConfigurationLoyalty { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.Loyalty.MaxScore = dto.Loyalty.MaxScore;
         ct.Loyalty.Relevance = dto.Loyalty.Relevance;
         var seasonRanges = dto.Loyalty.SeasonQuantityRanges.Select(r => new LoyaltySeasonQuantityRange
         {
@@ -465,6 +477,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         db.LoyaltyHistoricalVolumeRanges.AddRange(historicalRanges);
 
         ct.Quality ??= new SegmentationConfigurationQuality { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.Quality.MaxScore = dto.Quality.MaxScore;
         ct.Quality.Relevance = dto.Quality.Relevance;
         ct.Quality.NtrmScore = dto.Quality.NtrmScore;
         ct.Quality.MixtureScore = dto.Quality.MixtureScore;
@@ -481,6 +494,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         db.QualityIqsRanges.AddRange(iqsRanges);
 
         ct.Financial ??= new SegmentationConfigurationFinancial { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.Financial.MaxScore = dto.Financial.MaxScore;
         ct.Financial.Relevance = dto.Financial.Relevance;
         ct.Financial.DebtScore = dto.Financial.DebtScore;
         var selfFundingRanges = dto.Financial.SelfFundingRanges.Select(r => new FinancialSelfFundingRange
@@ -496,22 +510,37 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         db.FinancialSelfFundingRanges.AddRange(selfFundingRanges);
 
         ct.Technology ??= new SegmentationConfigurationTechnology { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.Technology.MaxScore = dto.Technology.MaxScore;
         ct.Technology.Relevance = dto.Technology.Relevance;
-        ct.Technology.HasLargeBaseRidgeWithMulchScore = dto.Technology.HasLargeBaseRidgeWithMulchScore;
-        ct.Technology.HasBroadGrateFurnaceScore = dto.Technology.HasBroadGrateFurnaceScore;
-        ct.Technology.HasTechnologyPackageAdherenceScore = dto.Technology.HasTechnologyPackageAdherenceScore;
-        ct.Technology.HasStandardBarnScore = dto.Technology.HasStandardBarnScore;
+        var technologyScores = dto.Technology.TechnologyScores.Select(s => new SegmentationConfigurationTechnologyScore
+        {
+            Id = Guid.NewGuid(),
+            SegmentationConfigurationCultureTypeId = cultureTypeId,
+            TechnologyId = s.TechnologyId,
+            Score = s.Score
+        }).ToList();
+        ct.Technology.TechnologyScores = technologyScores;
+        db.SegmentationConfigurationTechnologyScores.AddRange(technologyScores);
 
         ct.Esg ??= new SegmentationConfigurationEsg { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.Esg.MaxScore = dto.Esg.MaxScore;
         ct.Esg.Relevance = dto.Esg.Relevance;
         ct.Esg.ReforestationScorePerPercentualPoint = dto.Esg.ReforestationScorePerPercentualPoint;
         ct.Esg.ReforestationMaximumScore = dto.Esg.ReforestationMaximumScore;
         ct.Esg.NativeForestScorePerPercentualPoint = dto.Esg.NativeForestScorePerPercentualPoint;
         ct.Esg.NativeForestMaximumScore = dto.Esg.NativeForestMaximumScore;
-        ct.Esg.MinorIrregularityScore = dto.Esg.MinorIrregularityScore;
-        ct.Esg.MajorIrregularityScore = dto.Esg.MajorIrregularityScore;
+        var irregularityScores = dto.Esg.IrregularityScores.Select(s => new SegmentationConfigurationEsgIrregularityScore
+        {
+            Id = Guid.NewGuid(),
+            SegmentationConfigurationCultureTypeId = cultureTypeId,
+            IrregularityTypeId = s.IrregularityTypeId,
+            Score = s.Score
+        }).ToList();
+        ct.Esg.IrregularityScores = irregularityScores;
+        db.SegmentationConfigurationEsgIrregularityScores.AddRange(irregularityScores);
 
         ct.Yield ??= new SegmentationConfigurationYield { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.Yield.MaxScore = dto.Yield.MaxScore;
         ct.Yield.Relevance = dto.Yield.Relevance;
         var yieldRanges = dto.Yield.Ranges.Select(r => new YieldRange
         {
@@ -526,6 +555,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         db.YieldRanges.AddRange(yieldRanges);
 
         ct.Scale ??= new SegmentationConfigurationScale { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.Scale.MaxScore = dto.Scale.MaxScore;
         ct.Scale.Relevance = dto.Scale.Relevance;
         var scaleRanges = dto.Scale.Ranges.Select(r => new ScaleRange
         {
@@ -540,6 +570,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         db.ScaleRanges.AddRange(scaleRanges);
 
         ct.YieldAndScale ??= new SegmentationConfigurationYieldAndScale { SegmentationConfigurationCultureTypeId = cultureTypeId };
+        ct.YieldAndScale.MaxScore = dto.YieldAndScale.MaxScore;
         ct.YieldAndScale.Relevance = dto.YieldAndScale.Relevance;
         var yieldAndScaleRanges = dto.YieldAndScale.Ranges.Select(r => new YieldAndScaleRange
         {
@@ -559,6 +590,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
     private static void ApplyKpiBlocks(SegmentationConfigurationCultureType ct, CultureTypeConfigurationWriteDto dto)
     {
         ct.Loyalty ??= new SegmentationConfigurationLoyalty { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.Loyalty.MaxScore = dto.Loyalty.MaxScore;
         ct.Loyalty.Relevance = dto.Loyalty.Relevance;
         ct.Loyalty.SeasonQuantityRanges = dto.Loyalty.SeasonQuantityRanges.Select(r => new LoyaltySeasonQuantityRange
         {
@@ -581,6 +613,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList();
 
         ct.Quality ??= new SegmentationConfigurationQuality { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.Quality.MaxScore = dto.Quality.MaxScore;
         ct.Quality.Relevance = dto.Quality.Relevance;
         ct.Quality.NtrmScore = dto.Quality.NtrmScore;
         ct.Quality.MixtureScore = dto.Quality.MixtureScore;
@@ -595,6 +628,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList();
 
         ct.Financial ??= new SegmentationConfigurationFinancial { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.Financial.MaxScore = dto.Financial.MaxScore;
         ct.Financial.Relevance = dto.Financial.Relevance;
         ct.Financial.DebtScore = dto.Financial.DebtScore;
         ct.Financial.SelfFundingRanges = dto.Financial.SelfFundingRanges.Select(r => new FinancialSelfFundingRange
@@ -608,22 +642,33 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList();
 
         ct.Technology ??= new SegmentationConfigurationTechnology { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.Technology.MaxScore = dto.Technology.MaxScore;
         ct.Technology.Relevance = dto.Technology.Relevance;
-        ct.Technology.HasLargeBaseRidgeWithMulchScore = dto.Technology.HasLargeBaseRidgeWithMulchScore;
-        ct.Technology.HasBroadGrateFurnaceScore = dto.Technology.HasBroadGrateFurnaceScore;
-        ct.Technology.HasTechnologyPackageAdherenceScore = dto.Technology.HasTechnologyPackageAdherenceScore;
-        ct.Technology.HasStandardBarnScore = dto.Technology.HasStandardBarnScore;
+        ct.Technology.TechnologyScores = dto.Technology.TechnologyScores.Select(s => new SegmentationConfigurationTechnologyScore
+        {
+            Id = Guid.NewGuid(),
+            SegmentationConfigurationCultureTypeId = ct.Id,
+            TechnologyId = s.TechnologyId,
+            Score = s.Score
+        }).ToList();
 
         ct.Esg ??= new SegmentationConfigurationEsg { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.Esg.MaxScore = dto.Esg.MaxScore;
         ct.Esg.Relevance = dto.Esg.Relevance;
         ct.Esg.ReforestationScorePerPercentualPoint = dto.Esg.ReforestationScorePerPercentualPoint;
         ct.Esg.ReforestationMaximumScore = dto.Esg.ReforestationMaximumScore;
         ct.Esg.NativeForestScorePerPercentualPoint = dto.Esg.NativeForestScorePerPercentualPoint;
         ct.Esg.NativeForestMaximumScore = dto.Esg.NativeForestMaximumScore;
-        ct.Esg.MinorIrregularityScore = dto.Esg.MinorIrregularityScore;
-        ct.Esg.MajorIrregularityScore = dto.Esg.MajorIrregularityScore;
+        ct.Esg.IrregularityScores = dto.Esg.IrregularityScores.Select(s => new SegmentationConfigurationEsgIrregularityScore
+        {
+            Id = Guid.NewGuid(),
+            SegmentationConfigurationCultureTypeId = ct.Id,
+            IrregularityTypeId = s.IrregularityTypeId,
+            Score = s.Score
+        }).ToList();
 
         ct.Yield ??= new SegmentationConfigurationYield { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.Yield.MaxScore = dto.Yield.MaxScore;
         ct.Yield.Relevance = dto.Yield.Relevance;
         ct.Yield.Ranges = dto.Yield.Ranges.Select(r => new YieldRange
         {
@@ -636,6 +681,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList();
 
         ct.Scale ??= new SegmentationConfigurationScale { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.Scale.MaxScore = dto.Scale.MaxScore;
         ct.Scale.Relevance = dto.Scale.Relevance;
         ct.Scale.Ranges = dto.Scale.Ranges.Select(r => new ScaleRange
         {
@@ -648,6 +694,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList();
 
         ct.YieldAndScale ??= new SegmentationConfigurationYieldAndScale { SegmentationConfigurationCultureTypeId = ct.Id };
+        ct.YieldAndScale.MaxScore = dto.YieldAndScale.MaxScore;
         ct.YieldAndScale.Relevance = dto.YieldAndScale.Relevance;
         ct.YieldAndScale.Ranges = dto.YieldAndScale.Ranges.Select(r => new YieldAndScaleRange
         {
@@ -699,8 +746,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
     private static SaveSegmentationConfigurationDto MapToSaveDto(SegmentationConfiguration c, string? nameOverride = null)
     {
-        SegmentationConfigurationKpiMaxScores.SynchronizeAll(c);
-
         return new SaveSegmentationConfigurationDto
         {
             Name = nameOverride ?? c.Name,
@@ -740,6 +785,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
     private static SegmentationLoyaltyWriteDto MapLoyaltyWrite(SegmentationConfigurationLoyalty l) => new()
     {
+        MaxScore = l.MaxScore,
         Relevance = l.Relevance,
         SeasonQuantityRanges = l.SeasonQuantityRanges.Select(r => new LoyaltySeasonQuantityRangeDto
         {
@@ -759,6 +805,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
     private static SegmentationQualityWriteDto MapQualityWrite(SegmentationConfigurationQuality q) => new()
     {
+        MaxScore = q.MaxScore,
         Relevance = q.Relevance,
         NtrmScore = q.NtrmScore,
         MixtureScore = q.MixtureScore,
@@ -773,6 +820,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
     private static SegmentationFinancialWriteDto MapFinancialWrite(SegmentationConfigurationFinancial f) => new()
     {
+        MaxScore = f.MaxScore,
         Relevance = f.Relevance,
         DebtScore = f.DebtScore,
         SelfFundingRanges = f.SelfFundingRanges.Select(r => new FinancialSelfFundingRangeDto
@@ -784,28 +832,57 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList()
     };
 
-    private static SegmentationTechnologyWriteDto MapTechnologyWrite(SegmentationConfigurationTechnology t) => new()
+    private static SegmentationTechnologyDetailDto MapTechnologyDetail(SegmentationConfigurationTechnology t) => new()
     {
+        MaxScore = t.MaxScore,
         Relevance = t.Relevance,
-        HasLargeBaseRidgeWithMulchScore = t.HasLargeBaseRidgeWithMulchScore,
-        HasBroadGrateFurnaceScore = t.HasBroadGrateFurnaceScore,
-        HasTechnologyPackageAdherenceScore = t.HasTechnologyPackageAdherenceScore,
-        HasStandardBarnScore = t.HasStandardBarnScore
+        TechnologyScores = t.TechnologyScores
+            .OrderBy(s => s.TechnologyId)
+            .Select(s => new TechnologyScoreDto { TechnologyId = s.TechnologyId, Score = s.Score })
+            .ToList()
     };
 
-    private static SegmentationEsgWriteDto MapEsgWrite(SegmentationConfigurationEsg e) => new()
+    private static SegmentationTechnologyWriteDto MapTechnologyWrite(SegmentationConfigurationTechnology t) => new()
     {
+        MaxScore = t.MaxScore,
+        Relevance = t.Relevance,
+        TechnologyScores = t.TechnologyScores
+            .OrderBy(s => s.TechnologyId)
+            .Select(s => new TechnologyScoreDto { TechnologyId = s.TechnologyId, Score = s.Score })
+            .ToList()
+    };
+
+    private static SegmentationEsgDetailDto MapEsgDetail(SegmentationConfigurationEsg e) => new()
+    {
+        MaxScore = e.MaxScore,
         Relevance = e.Relevance,
         ReforestationScorePerPercentualPoint = e.ReforestationScorePerPercentualPoint,
         ReforestationMaximumScore = e.ReforestationMaximumScore,
         NativeForestScorePerPercentualPoint = e.NativeForestScorePerPercentualPoint,
         NativeForestMaximumScore = e.NativeForestMaximumScore,
-        MinorIrregularityScore = e.MinorIrregularityScore,
-        MajorIrregularityScore = e.MajorIrregularityScore
+        IrregularityScores = e.IrregularityScores
+            .OrderBy(s => s.IrregularityTypeId)
+            .Select(s => new EsgIrregularityScoreDto { IrregularityTypeId = s.IrregularityTypeId, Score = s.Score })
+            .ToList()
+    };
+
+    private static SegmentationEsgWriteDto MapEsgWrite(SegmentationConfigurationEsg e) => new()
+    {
+        MaxScore = e.MaxScore,
+        Relevance = e.Relevance,
+        ReforestationScorePerPercentualPoint = e.ReforestationScorePerPercentualPoint,
+        ReforestationMaximumScore = e.ReforestationMaximumScore,
+        NativeForestScorePerPercentualPoint = e.NativeForestScorePerPercentualPoint,
+        NativeForestMaximumScore = e.NativeForestMaximumScore,
+        IrregularityScores = e.IrregularityScores
+            .OrderBy(s => s.IrregularityTypeId)
+            .Select(s => new EsgIrregularityScoreDto { IrregularityTypeId = s.IrregularityTypeId, Score = s.Score })
+            .ToList()
     };
 
     private static SegmentationYieldWriteDto MapYieldWrite(SegmentationConfigurationYield y) => new()
     {
+        MaxScore = y.MaxScore,
         Relevance = y.Relevance,
         Ranges = y.Ranges.Select(r => new YieldRangeDto
         {
@@ -818,6 +895,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
     private static SegmentationScaleWriteDto MapScaleWrite(SegmentationConfigurationScale s) => new()
     {
+        MaxScore = s.MaxScore,
         Relevance = s.Relevance,
         Ranges = s.Ranges.Select(r => new ScaleRangeDto
         {
@@ -830,6 +908,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
     private static SegmentationYieldAndScaleWriteDto MapYieldAndScaleWrite(SegmentationConfigurationYieldAndScale ys) => new()
     {
+        MaxScore = ys.MaxScore,
         Relevance = ys.Relevance,
         Ranges = ys.Ranges.Select(r => new YieldAndScaleRangeDto
         {
@@ -844,8 +923,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
 
     private static SegmentationConfigurationDetailDto MapToDetail(SegmentationConfiguration c)
     {
-        SegmentationConfigurationKpiMaxScores.SynchronizeAll(c);
-
         return new SegmentationConfigurationDetailDto
         {
             Id = c.Id,
@@ -918,26 +995,8 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
                         Score = r.Score
                     }).ToList()
                 },
-                Technology = new SegmentationTechnologyDetailDto
-                {
-                    MaxScore = ct.Technology!.MaxScore,
-                    Relevance = ct.Technology.Relevance,
-                    HasLargeBaseRidgeWithMulchScore = ct.Technology.HasLargeBaseRidgeWithMulchScore,
-                    HasBroadGrateFurnaceScore = ct.Technology.HasBroadGrateFurnaceScore,
-                    HasTechnologyPackageAdherenceScore = ct.Technology.HasTechnologyPackageAdherenceScore,
-                    HasStandardBarnScore = ct.Technology.HasStandardBarnScore
-                },
-                Esg = new SegmentationEsgDetailDto
-                {
-                    MaxScore = ct.Esg!.MaxScore,
-                    Relevance = ct.Esg.Relevance,
-                    ReforestationScorePerPercentualPoint = ct.Esg.ReforestationScorePerPercentualPoint,
-                    ReforestationMaximumScore = ct.Esg.ReforestationMaximumScore,
-                    NativeForestScorePerPercentualPoint = ct.Esg.NativeForestScorePerPercentualPoint,
-                    NativeForestMaximumScore = ct.Esg.NativeForestMaximumScore,
-                    MinorIrregularityScore = ct.Esg.MinorIrregularityScore,
-                    MajorIrregularityScore = ct.Esg.MajorIrregularityScore
-                },
+                Technology = MapTechnologyDetail(ct.Technology!),
+                Esg = MapEsgDetail(ct.Esg!),
                 Yield = new SegmentationYieldDetailDto
                 {
                     MaxScore = ct.Yield!.MaxScore,

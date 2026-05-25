@@ -17,4 +17,8 @@ public class LoyaltyKpi
     /// Delivered percentage for the farmer in this crop season (0–100 scale per prototype seed).
     /// </summary>
     public int DeliveredPercentage { get; set; }
+
+    public int DeliveredAmountKg { get; set; }
+
+    public int ContractedAmountKg { get; set; }
 }

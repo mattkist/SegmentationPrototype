@@ -17,10 +17,10 @@ export const hints = {
     'Each KPI type has its own grid for the selected season. You can bulk-load or update values with CSV import; rows are upserted by farmer code and crop season id.',
 
   homeConfigs:
-    'A segmentation configuration bundles segment thresholds (commercial tiers) with scoring rules for Loyalty, Quality, Finance, Technology, ESG, Yield, Scale, and optional combined Yield & Scale. Saving enforces that the sum of derived KPI maximum scores equals the configuration Maximum score.',
+    'A segmentation configuration bundles segment thresholds with scoring rules per KPI. You set the culture-type maximum score and each KPI maximum score manually; relevance % is read-only (KPI max ÷ culture max). Save is allowed only when KPI max scores sum to the culture maximum and each KPI max matches the cap implied by its rules (sum of positive technology scores, range maxima, etc.).',
 
   homeSimulations:
-    'A simulation applies one configuration to every farmer, stores component scores and a chosen crop season id on the run (for history and accept-official), assigns a segment from total score, and ranks farmers with competition ranking (ties share rank). Rule anchors come from the configuration, not from that stored season. Accepting replaces the official segmentation snapshot for the run’s crop season.',
+    'A simulation applies one configuration to every farmer for a target crop season. Multi-season KPIs (Loyalty, Yield & Scale) use the scope season list. Farmers without Loyalty and Yield & Scale data in the season before the target are treated as new (score 0, no segment). Results can be exported as CSV; segment share charts exclude new farmers.',
 
   farmersList:
     'All farmers are listed. Official total, rank, and segment (if any) refer to the accepted segmentation for the selected crop season—not the latest simulation unless you have accepted it.',
@@ -32,28 +32,28 @@ export const hints = {
     'Each tab loads read-only rows for the active crop season. Use Import CSV to upsert; invalid farmer codes or unknown seasons appear in the import error list.',
 
   csvLoyalty:
-    'Columns: FarmerCode, CropSeasonId, DeliveredPercentage (0–100 in the prototype). One row per farmer per season.',
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode, DeliveredPercentage, DeliveredAmountKg, ContractedAmountKg. One row per farmer per culture type per season.',
 
   csvQuality:
-    'Columns: FarmerCode, CropSeasonId, Iqs, HadNtrm, HadQualityMixture (booleans).',
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode, Iqs, HadNtrm, HadQualityMixture (booleans).',
 
   csvFinancial:
-    'Columns: FarmerCode, CropSeasonId, SelfFundingPercentage, HaveDebt.',
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode, SelfFundingPercentage, HaveDebt.',
 
-  csvYield: 'Columns: FarmerCode, CropSeasonId, Yield.',
-  csvScale: 'Columns: FarmerCode, CropSeasonId, Scale.',
+  csvYieldAndScale:
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode, Yield, Scale, ContractedAmountKg.',
 
   csvTechnologies:
-    'Columns: FarmerCode, CropSeasonId, CultureTypeCode (optional), HasLargeBaseRidgeWithMulch, HasBroadGrateFurnace, HasTechnologyPackageAdherence, HasStandardBarn (optional, defaults to false).',
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode, TechnologyId. One row per technology adopted that season (catalog at GET /api/ReferenceData/technologies).',
 
   csvEsg:
-    'Columns: FarmerCode, CropSeasonId, ReforestationPercentage, NativeForestPercentage, HasMinorIrregularity, HasMajorIrregularity.',
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode, ReforestationPercentage, NativeForestPercentage.',
+
+  csvEsgIrregularities:
+    'Columns: FarmerCode, CropSeasonId, CultureTypeCode, IrregularityTypeId (catalog at GET /api/ReferenceData/irregularity-types).',
 
   configMaximumScore:
-    'Target total of all KPI caps after rules are interpreted. The server recomputes each block’s MaxScore from your ranges and caps, then requires: Loyalty + Quality + Financial + Technology + ESG + Yield + Scale + Yield & Scale = Maximum score. The panel below shows the live breakdown while you edit.',
-
-  configRelevance:
-    'Relevance is **derived max for that KPI ÷ configuration maximum score** (shown as %). While the sum of derived caps equals the maximum score, changing one % **rescales all score fields** in every KPI block so caps stay married to those shares. Simulation totals still use the rescaled rule scores.',
+    'Culture-type maximum score is the segmentation total you want (e.g. 100). Each KPI has its own configured maximum; their sum must equal this value before save. The “Derived from rules” column shows what your current rules allow; it must match the configured KPI max (mismatch only blocks save, never blocks editing).',
 
   configSegments:
     'Segments are named tiers (e.g. Diamond, Gold). Range min is the minimum **total simulation score** to qualify; it may be **negative** if your rules produce negative totals. Segments with higher Range min are evaluated first. Empty Range min is a catch-all after other thresholds. OnlyExclusiveFarmer excludes non-exclusive farmers from that tier during assignment.',
@@ -71,19 +71,22 @@ export const hints = {
     'Self-funding ranges use each row’s Crop season start as the window end. Debt uses the self-funding row with the latest configured anchor to read HaveDebt, then compares that anchor to Debt crop season.',
 
   technology:
-    'Each technology field stores the crop season id whose TechnologiesKpi row is read for that lever (mulch, furnace, package). If the flag is true in that row, the score is added. Technology KPI cap on save sums positive configured scores.',
+    'Pick technologies from the catalog and assign a score for each. At simulation time, the latest scope season’s Technologies KPI rows are matched; points for each configured technology present are summed. Technology KPI maximum must equal the sum of all positive technology scores in this block.',
 
   esg:
-    'Reforestation uses the KPI row at Reforestation crop season; native forest uses Native forest crop season; irregularities use their respective crop season rows. Caps apply as configured. ESG KPI cap on save is reforestation max + native max.',
-
-  yieldScale:
-    'Each range uses its Crop season start as the right end of the look-back window; every season in the window (except skipped) must fall inside min/max. Best matching row score wins.',
+    'Reforestation and native forest percentages come from the ESG KPI row at the latest scope season (capped by your per-point rules). Irregularity scores use ESG irregularity KPI rows for that season. ESG KPI maximum must equal reforestation max + native forest max + sum of positive irregularity scores.',
 
   yieldAndScale:
-    'Optional combined KPI using existing Yield and Scale facts (no new KPI import). Counts scope seasons where both values exist, compares planting count, average yield, and average module (hectares) to one range. A farmer matches at most one range; cap is the largest positive range score. Set relevance to 0% here and use separate Yield/Scale tabs, or the opposite.',
+    'Uses YieldAndScale KPI rows across all scope seasons. Consolidated delivered % for loyalty is sum(delivered kg)/sum(contracted kg); here average module is the mean of scale across seasons with data, and consolidated yield is sum(contracted kg)/sum(scale). Cap is the largest positive matching range score.',
 
   simulationCreate:
-    'Creates a new run for all farmers. Scores use only seasons and anchors from the configuration plus KPI history; the crop season you pick is stored on the simulation and used when you accept as official (FarmerSegmentation for that season). Status S until accepted.',
+    'Target season (header) is stored on the run and used when accepting as official. Scope seasons drive Loyalty and Yield & Scale. Other KPIs read only the latest year in the scope list.',
+
+  simulationNewFarmer:
+    'Before scoring, the engine checks the crop season immediately before the simulation target (target year minus 1). If the farmer has no Loyalty KPI and no Yield & Scale KPI for that prior season for their culture type, they are treated as a new farmer: total score 0, no segment, excluded from segment distribution charts. Scope seasons do not change this gate.',
+
+  simulationNewFarmerShort:
+    'No contract/KPI baseline in the season before the target → score 0 and no segment (new farmer).',
 
   simulationRank:
     'Rank uses competition ranking: 1 plus the number of farmers with strictly higher total score. Equal totals share the same rank (e.g. 1,1,1,4).',
@@ -92,5 +95,8 @@ export const hints = {
     'Accepting marks this run as official (O) for its crop season, demotes any other official run for that season back to S, deletes existing FarmerSegmentation rows for the season, and inserts new rows from this simulation. This cannot be undone from the UI—run another simulation and accept it if you need to change official results.',
 
   simulationSegment:
-    'Segment assignment walks segment Range min from highest to lowest; the first segment the farmer qualifies for wins. Farmers flagged non-exclusive skip segments marked Only exclusive farmer. Segments without Range min are tried after all thresholds.',
+    'Segment assignment walks segment Range min from highest to lowest; the first segment the farmer qualifies for wins. Farmers flagged non-exclusive skip segments marked Only exclusive farmer. Segments without Range min are tried after all thresholds. New farmers never receive a segment.',
+
+  simulationExportCsv:
+    'Downloads all farmers in this run including component scores, segment name, new-farmer flag, and non-exclusive flag.',
 } as const

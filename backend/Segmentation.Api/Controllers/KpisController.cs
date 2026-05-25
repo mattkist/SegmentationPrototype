@@ -22,13 +22,9 @@ public sealed class KpisController(
     public Task<IActionResult> FinancialAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
         GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListFinancialAsync(cs, cultureTypeCode, ct), cancellationToken);
 
-    [HttpGet("yield")]
-    public Task<IActionResult> YieldAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListYieldAsync(cs, cultureTypeCode, ct), cancellationToken);
-
-    [HttpGet("scale")]
-    public Task<IActionResult> ScaleAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListScaleAsync(cs, cultureTypeCode, ct), cancellationToken);
+    [HttpGet("yield-and-scale")]
+    public Task<IActionResult> YieldAndScaleAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListYieldAndScaleAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpGet("technologies")]
     public Task<IActionResult> TechnologiesAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
@@ -37,6 +33,10 @@ public sealed class KpisController(
     [HttpGet("esg")]
     public Task<IActionResult> EsgAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
         GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListEsgAsync(cs, cultureTypeCode, ct), cancellationToken);
+
+    [HttpGet("esg-irregularities")]
+    public Task<IActionResult> EsgIrregularitiesAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListEsgIrregularitiesAsync(cs, cultureTypeCode, ct), cancellationToken);
 
     [HttpPost("loyalty/import")]
     [Consumes("multipart/form-data")]
@@ -53,15 +53,10 @@ public sealed class KpisController(
     public Task<IActionResult> ImportFinancialAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
         ImportAsync(file, kpiImport.ImportFinancialAsync, cancellationToken);
 
-    [HttpPost("yield/import")]
+    [HttpPost("yield-and-scale/import")]
     [Consumes("multipart/form-data")]
-    public Task<IActionResult> ImportYieldAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
-        ImportAsync(file, kpiImport.ImportYieldAsync, cancellationToken);
-
-    [HttpPost("scale/import")]
-    [Consumes("multipart/form-data")]
-    public Task<IActionResult> ImportScaleAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
-        ImportAsync(file, kpiImport.ImportScaleAsync, cancellationToken);
+    public Task<IActionResult> ImportYieldAndScaleAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
+        ImportAsync(file, kpiImport.ImportYieldAndScaleAsync, cancellationToken);
 
     [HttpPost("technologies/import")]
     [Consumes("multipart/form-data")]
@@ -72,6 +67,11 @@ public sealed class KpisController(
     [Consumes("multipart/form-data")]
     public Task<IActionResult> ImportEsgAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
         ImportAsync(file, kpiImport.ImportEsgAsync, cancellationToken);
+
+    [HttpPost("esg-irregularities/import")]
+    [Consumes("multipart/form-data")]
+    public Task<IActionResult> ImportEsgIrregularitiesAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
+        ImportAsync(file, kpiImport.ImportEsgIrregularitiesAsync, cancellationToken);
 
     private async Task<IActionResult> GetKpiAsync<T>(
         int cropSeasonId,

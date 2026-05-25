@@ -3,9 +3,60 @@ import type {
   CultureTypeConfigurationWriteDto,
   SaveSegmentationConfigurationDto,
   SegmentationConfigurationDetailDto,
+  SegmentationTechnologyDetailDto,
+  SegmentationEsgDetailDto,
 } from '../api/types'
 import { normalizeConfigurationOrder } from './configurationSort'
 import { relevanceFieldToFraction } from './relevanceFraction'
+
+function mapTechnologyWrite(t: SegmentationTechnologyDetailDto) {
+  const legacy = t as SegmentationTechnologyDetailDto & {
+    hasLargeBaseRidgeWithMulchScore?: number
+    hasBroadGrateFurnaceScore?: number
+    hasTechnologyPackageAdherenceScore?: number
+    hasStandardBarnScore?: number
+  }
+  const technologyScores =
+    t.technologyScores?.length > 0
+      ? t.technologyScores.map((s) => ({ ...s }))
+      : [
+          { technologyId: 1, score: legacy.hasLargeBaseRidgeWithMulchScore ?? 0 },
+          { technologyId: 2, score: legacy.hasBroadGrateFurnaceScore ?? 0 },
+          { technologyId: 3, score: legacy.hasTechnologyPackageAdherenceScore ?? 0 },
+          { technologyId: 4, score: legacy.hasStandardBarnScore ?? 0 },
+        ].filter((s) => s.score !== 0 || [1, 2, 3, 4].includes(s.technologyId))
+
+  return {
+    maxScore: t.maxScore,
+    relevance: relevanceFieldToFraction((t as { relevance?: unknown }).relevance),
+    technologyScores,
+  }
+}
+
+function mapEsgWrite(e: SegmentationEsgDetailDto) {
+  const legacy = e as SegmentationEsgDetailDto & {
+    minorIrregularityScore?: number
+    majorIrregularityScore?: number
+  }
+  const irregularityScores =
+    e.irregularityScores?.length > 0
+      ? e.irregularityScores.map((s) => ({ ...s }))
+      : [
+          { irregularityTypeId: 1, score: legacy.minorIrregularityScore ?? 0 },
+          { irregularityTypeId: 2, score: legacy.majorIrregularityScore ?? 0 },
+        ].filter((s) => s.score !== 0)
+
+  return {
+    maxScore: e.maxScore,
+    relevance: relevanceFieldToFraction((e as { relevance?: unknown }).relevance),
+    reforestationScorePerPercentualPoint: e.reforestationScorePerPercentualPoint,
+    reforestationMaximumScore: e.reforestationMaximumScore,
+    nativeForestScorePerPercentualPoint: e.nativeForestScorePerPercentualPoint,
+    nativeForestMaximumScore: e.nativeForestMaximumScore,
+    irregularityScores,
+  }
+}
+
 function mapCultureTypeWrite(ct: CultureTypeConfigurationDetailDto): CultureTypeConfigurationWriteDto {
   return {
     id: ct.id,
@@ -13,46 +64,38 @@ function mapCultureTypeWrite(ct: CultureTypeConfigurationDetailDto): CultureType
     maximumScore: ct.maximumScore,
     segmentThresholds: ct.segmentThresholds.map((t) => ({ ...t })),
     loyalty: {
+      maxScore: ct.loyalty.maxScore,
       relevance: relevanceFieldToFraction((ct.loyalty as { relevance?: unknown }).relevance),
       seasonQuantityRanges: ct.loyalty.seasonQuantityRanges.map((r) => ({ ...r })),
       historicalVolumeRanges: ct.loyalty.historicalVolumeRanges.map((r) => ({ ...r })),
     },
     quality: {
+      maxScore: ct.quality.maxScore,
       relevance: relevanceFieldToFraction((ct.quality as { relevance?: unknown }).relevance),
       ntrmScore: ct.quality.ntrmScore,
       mixtureScore: ct.quality.mixtureScore,
       iqsRanges: ct.quality.iqsRanges.map((r) => ({ ...r })),
     },
     financial: {
+      maxScore: ct.financial.maxScore,
       relevance: relevanceFieldToFraction((ct.financial as { relevance?: unknown }).relevance),
       debtScore: ct.financial.debtScore,
       selfFundingRanges: ct.financial.selfFundingRanges.map((r) => ({ ...r })),
     },
-    technology: {
-      relevance: relevanceFieldToFraction((ct.technology as { relevance?: unknown }).relevance),
-      hasLargeBaseRidgeWithMulchScore: ct.technology.hasLargeBaseRidgeWithMulchScore,
-      hasBroadGrateFurnaceScore: ct.technology.hasBroadGrateFurnaceScore,
-      hasTechnologyPackageAdherenceScore: ct.technology.hasTechnologyPackageAdherenceScore,
-      hasStandardBarnScore: ct.technology.hasStandardBarnScore,
-    },
-    esg: {
-      relevance: relevanceFieldToFraction((ct.esg as { relevance?: unknown }).relevance),
-      reforestationScorePerPercentualPoint: ct.esg.reforestationScorePerPercentualPoint,
-      reforestationMaximumScore: ct.esg.reforestationMaximumScore,
-      nativeForestScorePerPercentualPoint: ct.esg.nativeForestScorePerPercentualPoint,
-      nativeForestMaximumScore: ct.esg.nativeForestMaximumScore,
-      minorIrregularityScore: ct.esg.minorIrregularityScore,
-      majorIrregularityScore: ct.esg.majorIrregularityScore,
-    },
+    technology: mapTechnologyWrite(ct.technology),
+    esg: mapEsgWrite(ct.esg),
     yield: {
+      maxScore: ct.yield.maxScore,
       relevance: relevanceFieldToFraction((ct.yield as { relevance?: unknown }).relevance),
       ranges: ct.yield.ranges.map((r) => ({ ...r })),
     },
     scale: {
+      maxScore: ct.scale.maxScore,
       relevance: relevanceFieldToFraction((ct.scale as { relevance?: unknown }).relevance),
       ranges: ct.scale.ranges.map((r) => ({ ...r })),
     },
     yieldAndScale: {
+      maxScore: ct.yieldAndScale.maxScore,
       relevance: relevanceFieldToFraction((ct.yieldAndScale as { relevance?: unknown }).relevance),
       ranges: ct.yieldAndScale.ranges.map((r) => ({ ...r })),
     },

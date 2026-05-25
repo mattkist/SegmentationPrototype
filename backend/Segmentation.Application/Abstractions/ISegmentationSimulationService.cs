@@ -15,4 +15,6 @@ public interface ISegmentationSimulationService
     Task<SegmentationSimulationDetailDto?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task AcceptOfficialAsync(Guid simulationId, CancellationToken cancellationToken = default);
+
+    Task<byte[]?> ExportCsvAsync(Guid id, CancellationToken cancellationToken = default);
 }
