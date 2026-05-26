@@ -9,6 +9,7 @@ import { ConfigurationsPage } from './pages/ConfigurationsPage'
 import { ConfigurationEditorPage } from './pages/ConfigurationEditorPage'
 import { SimulationsPage } from './pages/SimulationsPage'
 import { SimulationDetailPage } from './pages/SimulationDetailPage'
+import { SegmentationManagementPage } from './pages/SegmentationManagementPage'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="configurations/:id" element={<ConfigurationEditorPage />} />
             <Route path="simulations" element={<SimulationsPage />} />
             <Route path="simulations/:id" element={<SimulationDetailPage />} />
+            <Route path="segmentation-management" element={<SegmentationManagementPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

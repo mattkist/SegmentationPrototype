@@ -94,6 +94,25 @@ export async function apiPatch<T>(path: string, json: unknown): Promise<T> {
   return body as T
 }
 
+export async function apiPutEmpty(path: string, json: unknown): Promise<void> {
+  const res = await fetch(path, {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(json),
+  })
+  if (!res.ok) {
+    const body = await parseJsonSafe(res)
+    const msg =
+      typeof body === 'object' && body !== null && 'message' in body
+        ? String((body as ApiErrorBody).message)
+        : res.statusText
+    throw new ApiRequestError(msg || 'Request failed', res.status, body)
+  }
+}
+
 export async function apiPostEmpty(path: string): Promise<void> {
   const res = await fetch(path, {
     method: 'POST',

@@ -11,6 +11,13 @@ import type {
 } from '../api/types'
 import { useCropSeason } from '../context/CropSeasonContext'
 import { Hint } from '../components/Hint'
+import { KpiScopeFormSection } from '../features/simulation/KpiScopeFormSection'
+import {
+  buildKpiScopesFromForm,
+  createDefaultKpiScopeForm,
+  formatKpiScopesSummary,
+  isKpiScopeFormComplete,
+} from '../features/simulation/kpiScopeUtils'
 import { hints } from '../hints/en'
 
 export function SimulationsPage() {
@@ -18,7 +25,7 @@ export function SimulationsPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [configId, setConfigId] = useState('')
-  const [scopeSeasonIds, setScopeSeasonIds] = useState<number[]>([])
+  const [kpiScopeForm, setKpiScopeForm] = useState(createDefaultKpiScopeForm)
 
   const list = useQuery({
     queryKey: ['sims', seasonId],
@@ -48,13 +55,10 @@ export function SimulationsPage() {
     },
   })
 
-  const toggleScope = (id: number) => {
-    setScopeSeasonIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id].sort((a, b) => b - a),
-    )
-  }
-
   if (seasonId === null) return <p className="text-ink-muted">Loading seasons…</p>
+
+  const seasonList = seasons.data ?? []
+  const scopeComplete = isKpiScopeFormComplete(kpiScopeForm)
 
   return (
     <div className="space-y-6">
@@ -69,7 +73,7 @@ export function SimulationsPage() {
           <Hint content={hints.simulationCreate} />
         </h2>
         <p className="mt-1 text-xs text-ink-muted">
-          Target season (header): {seasonId}. Select scope seasons for multi-season rules.
+          Target season (header): {seasonId}. Configure crop seasons and aggregation per KPI.
         </p>
         <p className="mt-2 flex items-start gap-2 rounded-lg border border-sky-200/60 bg-sky-50/60 px-3 py-2 text-xs text-ink-muted">
           <Hint content={hints.simulationNewFarmer} />
@@ -93,32 +97,25 @@ export function SimulationsPage() {
           </label>
         </div>
         <div className="mt-4">
-          <p className="text-xs font-medium text-ink-muted">Scope crop seasons</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(seasons.data ?? []).map((s) => (
-              <label
-                key={s.id}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 px-3 py-1.5 text-sm"
-              >
-                <input
-                  type="checkbox"
-                  checked={scopeSeasonIds.includes(s.id)}
-                  onChange={() => toggleScope(s.id)}
-                />
-                {s.code}
-              </label>
-            ))}
-          </div>
+          {seasonList.length > 0 ? (
+            <KpiScopeFormSection
+              seasons={seasonList}
+              form={kpiScopeForm}
+              onChange={setKpiScopeForm}
+            />
+          ) : (
+            <p className="mt-2 text-sm text-ink-muted">Loading crop seasons…</p>
+          )}
         </div>
         <button
           type="button"
-          disabled={!configId || scopeSeasonIds.length === 0 || create.isPending}
+          disabled={!configId || !scopeComplete || create.isPending}
           className="mt-4 rounded-xl bg-leaf px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           onClick={() =>
             create.mutate({
               segmentationConfigurationId: configId,
               cropSeasonId: seasonId,
-              scopeCropSeasonIds: scopeSeasonIds,
+              kpiScopes: buildKpiScopesFromForm(kpiScopeForm),
             })
           }
         >
@@ -144,7 +141,7 @@ export function SimulationsPage() {
                 <tr>
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Configuration</th>
-                  <th className="px-4 py-3">Scope</th>
+                  <th className="px-4 py-3">KPI scopes</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Farmers</th>
                   <th className="px-4 py-3" />
@@ -157,8 +154,8 @@ export function SimulationsPage() {
                       {new Date(s.simulationDate).toLocaleString()}
                     </td>
                     <td className="px-4 py-2">{s.configurationName}</td>
-                    <td className="px-4 py-2 font-mono text-xs">
-                      {s.scopeCropSeasonIds.join(', ')}
+                    <td className="max-w-md px-4 py-2 text-xs text-ink-muted">
+                      {formatKpiScopesSummary(s.kpiScopes, seasonList)}
                     </td>
                     <td className="px-4 py-2 font-mono">{s.status}</td>
                     <td className="px-4 py-2 tabular-nums">{s.farmerCount}</td>

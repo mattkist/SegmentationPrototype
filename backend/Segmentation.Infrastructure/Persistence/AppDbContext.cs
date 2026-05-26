@@ -10,14 +10,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Farmer> Farmers => Set<Farmer>();
     public DbSet<FarmerCluster> FarmerClusters => Set<FarmerCluster>();
     public DbSet<FarmerClusterFarmer> FarmerClusterFarmers => Set<FarmerClusterFarmer>();
-    public DbSet<LoyaltyKpi> LoyaltyKpis => Set<LoyaltyKpi>();
-    public DbSet<QualityKpi> QualityKpis => Set<QualityKpi>();
-    public DbSet<FinancialKpi> FinancialKpis => Set<FinancialKpi>();
+    public DbSet<FarmerContractKpi> FarmerContractKpis => Set<FarmerContractKpi>();
     public DbSet<TechnologyCatalog> Technologies => Set<TechnologyCatalog>();
     public DbSet<IrregularityTypeCatalog> IrregularityTypes => Set<IrregularityTypeCatalog>();
-    public DbSet<YieldAndScaleKpi> YieldAndScaleKpis => Set<YieldAndScaleKpi>();
     public DbSet<TechnologiesKpi> TechnologiesKpis => Set<TechnologiesKpi>();
-    public DbSet<EsgKpi> EsgKpis => Set<EsgKpi>();
     public DbSet<EsgIrregularityKpi> EsgIrregularityKpis => Set<EsgIrregularityKpi>();
     public DbSet<SegmentationConfiguration> SegmentationConfigurations => Set<SegmentationConfiguration>();
     public DbSet<SegmentationSegment> SegmentationSegments => Set<SegmentationSegment>();
@@ -41,11 +37,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<YieldRange> YieldRanges => Set<YieldRange>();
     public DbSet<SegmentationConfigurationScale> SegmentationConfigurationScales => Set<SegmentationConfigurationScale>();
     public DbSet<ScaleRange> ScaleRanges => Set<ScaleRange>();
-    public DbSet<SegmentationConfigurationYieldAndScale> SegmentationConfigurationYieldAndScales =>
-        Set<SegmentationConfigurationYieldAndScale>();
-    public DbSet<YieldAndScaleRange> YieldAndScaleRanges => Set<YieldAndScaleRange>();
     public DbSet<SegmentationSimulation> SegmentationSimulations => Set<SegmentationSimulation>();
-    public DbSet<SegmentationSimulationCropSeason> SegmentationSimulationCropSeasons => Set<SegmentationSimulationCropSeason>();
+    public DbSet<SegmentationSimulationKpiScope> SegmentationSimulationKpiScopes => Set<SegmentationSimulationKpiScope>();
+    public DbSet<SegmentationSimulationKpiScopeSeason> SegmentationSimulationKpiScopeSeasons =>
+        Set<SegmentationSimulationKpiScopeSeason>();
     public DbSet<SegmentationSimulationFarmer> SegmentationSimulationFarmers => Set<SegmentationSimulationFarmer>();
     public DbSet<FarmerSegmentation> FarmerSegmentations => Set<FarmerSegmentation>();
 
@@ -93,36 +88,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Farmer).WithMany(x => x.ClusterLinks).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<LoyaltyKpi>(e =>
+        modelBuilder.Entity<FarmerContractKpi>(e =>
         {
-            e.ToTable("LoyaltyKpis");
-            e.HasKey(x => x.Id);
+            e.ToTable("FarmerContractKpis");
+            e.HasKey(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode });
             e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.Farmer).WithMany(x => x.LoyaltyKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Farmer).WithMany(x => x.ContractKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
-        modelBuilder.Entity<QualityKpi>(e =>
-        {
-            e.ToTable("QualityKpis");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.Farmer).WithMany(x => x.QualityKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
-        });
-        modelBuilder.Entity<FinancialKpi>(e =>
-        {
-            e.ToTable("FinancialKpis");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.Farmer).WithMany(x => x.FinancialKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
-        });
+
         modelBuilder.Entity<TechnologyCatalog>(e =>
         {
             e.ToTable("Technologies");
@@ -139,17 +114,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Name).HasMaxLength(256).IsRequired();
         });
 
-        modelBuilder.Entity<YieldAndScaleKpi>(e =>
-        {
-            e.ToTable("YieldAndScaleKpis");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.Farmer).WithMany(x => x.YieldAndScaleKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
-        });
-
         modelBuilder.Entity<TechnologiesKpi>(e =>
         {
             e.ToTable("TechnologiesKpis");
@@ -161,17 +125,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Technology).WithMany(x => x.TechnologiesKpis).HasForeignKey(x => x.TechnologyId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode, x.TechnologyId }).IsUnique();
-        });
-
-        modelBuilder.Entity<EsgKpi>(e =>
-        {
-            e.ToTable("EsgKpis");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.CultureTypeCode).HasMaxLength(8).IsRequired();
-            e.HasOne(x => x.Farmer).WithMany(x => x.EsgKpis).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.CultureType).WithMany().HasForeignKey(x => x.CultureTypeCode).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FarmerId, x.CropSeasonId, x.CultureTypeCode }).IsUnique();
         });
 
         modelBuilder.Entity<EsgIrregularityKpi>(e =>
@@ -228,8 +181,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Yield).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationYield>(x => x.SegmentationConfigurationCultureTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Scale).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationScale>(x => x.SegmentationConfigurationCultureTypeId)
-                .OnDelete(DeleteBehavior.Cascade);
-            e.HasOne(x => x.YieldAndScale).WithOne(x => x.CultureType).HasForeignKey<SegmentationConfigurationYieldAndScale>(x => x.SegmentationConfigurationCultureTypeId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -363,23 +314,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.Id);
         });
 
-        modelBuilder.Entity<SegmentationConfigurationYieldAndScale>(e =>
-        {
-            e.ToTable("SegmentationConfigurationYieldAndScales");
-            e.HasKey(x => x.SegmentationConfigurationCultureTypeId);
-            e.Property(x => x.Relevance).HasPrecision(9, 4);
-            e.HasMany(x => x.Ranges).WithOne(x => x.YieldAndScale).HasForeignKey(x => x.SegmentationConfigurationCultureTypeId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<YieldAndScaleRange>(e =>
-        {
-            e.ToTable("YieldAndScaleRanges");
-            e.HasKey(x => x.Id);
-            e.Property(x => x.MinimumModule).HasPrecision(10, 1);
-            e.Property(x => x.MaximumModule).HasPrecision(10, 1);
-        });
-
         modelBuilder.Entity<SegmentationSimulation>(e =>
         {
             e.ToTable("SegmentationSimulations");
@@ -388,17 +322,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.SegmentationConfiguration).WithMany(x => x.Simulations).HasForeignKey(x => x.SegmentationConfigurationId)
                 .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
-            e.HasMany(x => x.ScopeCropSeasons).WithOne(x => x.SegmentationSimulation).HasForeignKey(x => x.SegmentationSimulationId)
+            e.HasMany(x => x.KpiScopes).WithOne(x => x.SegmentationSimulation).HasForeignKey(x => x.SegmentationSimulationId)
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.Farmers).WithOne(x => x.SegmentationSimulation).HasForeignKey(x => x.SegmentationSimulationId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<SegmentationSimulationCropSeason>(e =>
+        modelBuilder.Entity<SegmentationSimulationKpiScope>(e =>
         {
-            e.ToTable("SegmentationSimulationCropSeasons");
+            e.ToTable("SegmentationSimulationKpiScopes");
             e.HasKey(x => x.Id);
-            e.HasIndex(x => new { x.SegmentationSimulationId, x.CropSeasonId }).IsUnique();
+            e.Property(x => x.KpiKind).HasMaxLength(32).IsRequired();
+            e.Property(x => x.ValueAggregation).HasMaxLength(32);
+            e.HasIndex(x => new { x.SegmentationSimulationId, x.KpiKind }).IsUnique();
+            e.HasMany(x => x.Seasons).WithOne(x => x.KpiScope).HasForeignKey(x => x.SegmentationSimulationKpiScopeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SegmentationSimulationKpiScopeSeason>(e =>
+        {
+            e.ToTable("SegmentationSimulationKpiScopeSeasons");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.SegmentationSimulationKpiScopeId, x.CropSeasonId }).IsUnique();
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -420,6 +365,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => new { x.FarmerId, x.CropSeasonId }).IsUnique();
             e.HasOne(x => x.Farmer).WithMany(x => x.Segmentations).HasForeignKey(x => x.FarmerId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.CropSeason).WithMany().HasForeignKey(x => x.CropSeasonId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.SegmentationConfiguration).WithMany().HasForeignKey(x => x.SegmentationConfigurationId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Segment).WithMany(x => x.FarmerSegmentations).HasForeignKey(x => x.SegmentationConfigurationSegmentId)
                 .OnDelete(DeleteBehavior.Restrict);
         });

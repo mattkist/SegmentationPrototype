@@ -94,11 +94,6 @@ function mapCultureTypeWrite(ct: CultureTypeConfigurationDetailDto): CultureType
       relevance: relevanceFieldToFraction((ct.scale as { relevance?: unknown }).relevance),
       ranges: ct.scale.ranges.map((r) => ({ ...r })),
     },
-    yieldAndScale: {
-      maxScore: ct.yieldAndScale.maxScore,
-      relevance: relevanceFieldToFraction((ct.yieldAndScale as { relevance?: unknown }).relevance),
-      ranges: ct.yieldAndScale.ranges.map((r) => ({ ...r })),
-    },
   }
 }
 

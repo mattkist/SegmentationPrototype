@@ -13,6 +13,9 @@ public class FarmerSegmentation
     public int CropSeasonId { get; set; }
     public CropSeason CropSeason { get; set; } = null!;
 
+    public Guid SegmentationConfigurationId { get; set; }
+    public SegmentationConfiguration SegmentationConfiguration { get; set; } = null!;
+
     public int TotalScore { get; set; }
 
     public int LoyaltyScore { get; set; }
@@ -28,8 +31,6 @@ public class FarmerSegmentation
     public int YieldScore { get; set; }
 
     public int ScaleScore { get; set; }
-
-    public int YieldAndScaleScore { get; set; }
 
     public bool NonExclusiveFarmer { get; set; }
 

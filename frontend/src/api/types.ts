@@ -31,7 +31,6 @@ export interface OfficialSegmentationDto {
   esgScore: number
   yieldScore: number
   scaleScore: number
-  yieldAndScaleScore: number
 }
 
 export interface FarmerDetailDto {
@@ -46,16 +45,12 @@ export interface FarmerDetailDto {
 }
 
 export interface FarmerKpisForSeasonDto {
-  loyalty: LoyaltyKpiRowDto | null
-  quality: QualityKpiRowDto | null
-  financial: FinancialKpiRowDto | null
-  yieldAndScale: YieldAndScaleKpiRowDto | null
+  contractKpi: FarmerContractKpiRowDto | null
   technologies: TechnologiesKpiRowDto[]
-  esg: EsgKpiRowDto | null
   esgIrregularities: EsgIrregularityKpiRowDto[]
 }
 
-export interface LoyaltyKpiRowDto {
+export interface FarmerContractKpiRowDto {
   farmerCode: string
   cropSeasonId: number
   cropSeasonCode: string
@@ -63,33 +58,16 @@ export interface LoyaltyKpiRowDto {
   deliveredPercentage: number
   deliveredAmountKg: number
   contractedAmountKg: number
-}
-
-export interface QualityKpiRowDto {
-  farmerCode: string
-  cropSeasonId: number
-  cropSeasonCode: string
   iqs: number
   hadNtrm: boolean
   hadQualityMixture: boolean
-}
-
-export interface FinancialKpiRowDto {
-  farmerCode: string
-  cropSeasonId: number
-  cropSeasonCode: string
   selfFundingPercentage: number
   haveDebt: boolean
-}
-
-export interface YieldAndScaleKpiRowDto {
-  farmerCode: string
-  cropSeasonId: number
-  cropSeasonCode: string
-  cultureTypeCode: string
   yield: number
   scale: number
-  contractedAmountKg: number
+  reforestationPercentage: number
+  nativeForestPercentage: number
+  nonExclusive: boolean
 }
 
 export interface TechnologiesKpiRowDto {
@@ -99,15 +77,6 @@ export interface TechnologiesKpiRowDto {
   cultureTypeCode: string
   technologyId: number
   technologyName: string
-}
-
-export interface EsgKpiRowDto {
-  farmerCode: string
-  cropSeasonId: number
-  cropSeasonCode: string
-  cultureTypeCode: string
-  reforestationPercentage: number
-  nativeForestPercentage: number
 }
 
 export interface EsgIrregularityKpiRowDto {
@@ -272,23 +241,6 @@ export interface SegmentationScaleWriteDto {
 
 export interface SegmentationScaleDetailDto extends SegmentationScaleWriteDto {}
 
-export interface YieldAndScaleRangeDto {
-  yieldAndScaleCropSeasonAmount: number
-  minimumYield: number
-  maximumYield: number
-  minimumModule: number
-  maximumModule: number
-  score: number
-}
-
-export interface SegmentationYieldAndScaleWriteDto {
-  maxScore: number
-  relevance: number
-  ranges: YieldAndScaleRangeDto[]
-}
-
-export interface SegmentationYieldAndScaleDetailDto extends SegmentationYieldAndScaleWriteDto {}
-
 export interface CultureTypeConfigurationDetailDto {
   id?: string | null
   cultureTypeCode: string
@@ -301,7 +253,6 @@ export interface CultureTypeConfigurationDetailDto {
   esg: SegmentationEsgDetailDto
   yield: SegmentationYieldDetailDto
   scale: SegmentationScaleDetailDto
-  yieldAndScale: SegmentationYieldAndScaleDetailDto
 }
 
 export interface SegmentationConfigurationDetailDto {
@@ -323,7 +274,6 @@ export interface CultureTypeConfigurationWriteDto {
   esg: SegmentationEsgWriteDto
   yield: SegmentationYieldWriteDto
   scale: SegmentationScaleWriteDto
-  yieldAndScale: SegmentationYieldAndScaleWriteDto
 }
 
 export interface SaveSegmentationConfigurationDto {
@@ -332,10 +282,18 @@ export interface SaveSegmentationConfigurationDto {
   cultureTypes: CultureTypeConfigurationWriteDto[]
 }
 
+export type KpiValueAggregation = 'Average' | 'LastActiveCropData'
+
+export interface SimulationKpiScopeInputDto {
+  kpiKind: string
+  cropSeasonIds: number[]
+  valueAggregation?: KpiValueAggregation | null
+}
+
 export interface CreateSegmentationSimulationDto {
   segmentationConfigurationId: string
   cropSeasonId: number
-  scopeCropSeasonIds: number[]
+  kpiScopes: SimulationKpiScopeInputDto[]
 }
 
 export interface SegmentationSimulationSummaryDto {
@@ -344,7 +302,7 @@ export interface SegmentationSimulationSummaryDto {
   configurationName: string
   cropSeasonId: number
   cropSeasonCode: string
-  scopeCropSeasonIds: number[]
+  kpiScopes: SimulationKpiScopeInputDto[]
   simulationDate: string
   status: string
   farmerCount: number
@@ -363,7 +321,6 @@ export interface SegmentationSimulationFarmerDto {
   esgScore: number
   yieldScore: number
   scaleScore: number
-  yieldAndScaleScore: number
   nonExclusiveFarmer: boolean
   segmentationConfigurationSegmentId: string | null
   segmentName: string | null
@@ -387,12 +344,28 @@ export interface SegmentationSimulationDetailDto {
   configurationName: string
   cropSeasonId: number
   cropSeasonCode: string
-  scopeCropSeasonIds: number[]
+  kpiScopes: SimulationKpiScopeInputDto[]
   simulationDate: string
   status: string
   farmers: SegmentationSimulationFarmerDto[]
   overallSegmentDistribution: SegmentShareDto[]
   segmentDistributionByCultureType: CultureTypeSegmentDistributionDto[]
+}
+
+export interface SegmentationManagementRowDto {
+  farmerId: string
+  farmerCode: string
+  farmerName: string
+  cultureTypeCode: string
+  totalScore: number
+  segmentationConfigurationSegmentId: string | null
+  segmentName: string | null
+  segmentationConfigurationId: string
+  availableSegments: SegmentationSegmentDto[]
+}
+
+export interface SubmitSegmentationApprovalDto {
+  segmentationConfigurationSegmentId: string | null
 }
 
 export interface ApiErrorBody {

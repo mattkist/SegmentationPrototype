@@ -70,62 +70,42 @@ public static class DatabaseSeeder
 
         await db.SaveChangesAsync(cancellationToken);
 
+        var qualityByKey = QualitySeed().ToDictionary(x => (x.FarmerId, x.Season));
+        var financialByKey = FinancialSeed().ToDictionary(x => (x.FarmerId, x.Season));
+        var yieldScaleByKey = YieldAndScaleSeed().ToDictionary(x => (x.FarmerId, x.Season));
+        var esgByKey = EsgSeed().ToDictionary(x => (x.FarmerId, x.Season));
+
+        foreach (var loyalty in LoyaltySeed())
+        {
+            var key = (loyalty.FarmerId, loyalty.Season);
+            qualityByKey.TryGetValue(key, out var quality);
+            financialByKey.TryGetValue(key, out var financial);
+            yieldScaleByKey.TryGetValue(key, out var ys);
+            esgByKey.TryGetValue(key, out var esg);
+            var farmer = await db.Farmers.FirstAsync(f => f.Id == loyalty.FarmerId, cancellationToken);
+
+            db.FarmerContractKpis.Add(new FarmerContractKpi
+            {
+                FarmerId = loyalty.FarmerId,
+                CropSeasonId = loyalty.Season,
+                CultureTypeCode = CultureFor(loyalty.FarmerId),
+                DeliveredPercentage = loyalty.Pct,
+                DeliveredAmountKg = loyalty.Delivered,
+                ContractedAmountKg = loyalty.Contracted,
+                Iqs = quality.Iqs,
+                HadNtrm = quality.Ntrm,
+                HadQualityMixture = quality.Mixture,
+                SelfFundingPercentage = financial.Sf,
+                HaveDebt = financial.Debt,
+                Yield = ys.Yield,
+                Scale = ys.Scale,
+                ReforestationPercentage = esg.Ref,
+                NativeForestPercentage = esg.Native,
+                NonExclusive = farmer.NonExclusiveFarmer
+            });
+        }
+
         var gid = new SequentialGuidGenerator("c0000000-0000-4000-8000-000000000000");
-
-        foreach (var row in LoyaltySeed())
-        {
-            db.LoyaltyKpis.Add(new LoyaltyKpi
-            {
-                Id = gid.Next(),
-                FarmerId = row.FarmerId,
-                CropSeasonId = row.Season,
-                CultureTypeCode = CultureFor(row.FarmerId),
-                DeliveredPercentage = row.Pct,
-                DeliveredAmountKg = row.Delivered,
-                ContractedAmountKg = row.Contracted
-            });
-        }
-
-        foreach (var row in QualitySeed())
-        {
-            db.QualityKpis.Add(new QualityKpi
-            {
-                Id = gid.Next(),
-                FarmerId = row.FarmerId,
-                CropSeasonId = row.Season,
-                CultureTypeCode = CultureFor(row.FarmerId),
-                Iqs = row.Iqs,
-                HadNtrm = row.Ntrm,
-                HadQualityMixture = row.Mixture
-            });
-        }
-
-        foreach (var (farmerId, season, sf, debt) in FinancialSeed())
-        {
-            db.FinancialKpis.Add(new FinancialKpi
-            {
-                Id = gid.Next(),
-                FarmerId = farmerId,
-                CropSeasonId = season,
-                CultureTypeCode = CultureFor(farmerId),
-                SelfFundingPercentage = sf,
-                HaveDebt = debt
-            });
-        }
-
-        foreach (var row in YieldAndScaleSeed())
-        {
-            db.YieldAndScaleKpis.Add(new YieldAndScaleKpi
-            {
-                Id = gid.Next(),
-                FarmerId = row.FarmerId,
-                CropSeasonId = row.Season,
-                CultureTypeCode = CultureFor(row.FarmerId),
-                Yield = row.Yield,
-                Scale = row.Scale,
-                ContractedAmountKg = row.Contracted
-            });
-        }
 
         foreach (var row in TechnologiesSeed())
         {
@@ -136,19 +116,6 @@ public static class DatabaseSeeder
                 CropSeasonId = row.Season,
                 CultureTypeCode = CultureFor(row.FarmerId),
                 TechnologyId = row.TechnologyId
-            });
-        }
-
-        foreach (var row in EsgSeed())
-        {
-            db.EsgKpis.Add(new EsgKpi
-            {
-                Id = gid.Next(),
-                FarmerId = row.FarmerId,
-                CropSeasonId = row.Season,
-                CultureTypeCode = CultureFor(row.FarmerId),
-                ReforestationPercentage = row.Ref,
-                NativeForestPercentage = row.Native
             });
         }
 

@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { apiGet, apiPostEmpty, ApiRequestError } from '../api/client'
-import type { SegmentationSimulationDetailDto } from '../api/types'
+import type { CropSeasonDto, SegmentationSimulationDetailDto } from '../api/types'
 import { Hint } from '../components/Hint'
+import { KpiScopesReadOnlyList } from '../features/simulation/KpiScopeFormSection'
 import { SegmentDistributionChart } from '../features/simulation/SegmentDistributionChart'
 import { hints } from '../hints/en'
 import { cn } from '../lib/cn'
@@ -10,6 +11,11 @@ import { cn } from '../lib/cn'
 export function SimulationDetailPage() {
   const { id } = useParams<{ id: string }>()
   const qc = useQueryClient()
+
+  const seasons = useQuery({
+    queryKey: ['cropSeasons'],
+    queryFn: () => apiGet<CropSeasonDto[]>('/api/CropSeasons'),
+  })
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['sim', id],
@@ -29,6 +35,7 @@ export function SimulationDetailPage() {
   if (!id) return <p className="text-ink-muted">Missing id.</p>
 
   const newFarmerCount = data?.farmers.filter((f) => f.isNewFarmer).length ?? 0
+  const seasonList = seasons.data ?? []
 
   return (
     <div className="space-y-6">
@@ -49,9 +56,18 @@ export function SimulationDetailPage() {
             </span>
           </div>
           <p className="text-sm text-ink-muted">
-            {new Date(data.simulationDate).toLocaleString()} · Scope seasons:{' '}
-            {data.scopeCropSeasonIds.join(', ')}
+            {new Date(data.simulationDate).toLocaleString()}
           </p>
+          <div className="rounded-lg border border-black/5 bg-surface-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              KPI scopes
+            </p>
+            <KpiScopesReadOnlyList
+              scopes={data.kpiScopes}
+              seasons={seasonList}
+              className="mt-2"
+            />
+          </div>
 
           <div
             className="rounded-xl border border-sky-200/80 bg-sky-50/80 p-4 text-sm text-ink"
@@ -138,7 +154,8 @@ export function SimulationDetailPage() {
                   <th className="px-3 py-2">Fin</th>
                   <th className="px-3 py-2">Tech</th>
                   <th className="px-3 py-2">ESG</th>
-                  <th className="px-3 py-2">Y&amp;S</th>
+                  <th className="px-3 py-2">Yield</th>
+                  <th className="px-3 py-2">Scale</th>
                   <th className="px-3 py-2">
                     <span className="inline-flex items-center gap-1">
                       Segment
@@ -185,7 +202,10 @@ export function SimulationDetailPage() {
                       {f.esgScore}
                     </td>
                     <td className="px-3 py-1.5 font-mono tabular-nums text-ink-muted">
-                      {f.yieldAndScaleScore}
+                      {f.yieldScore}
+                    </td>
+                    <td className="px-3 py-1.5 font-mono tabular-nums text-ink-muted">
+                      {f.scaleScore}
                     </td>
                     <td className="px-3 py-1.5 text-ink-muted">
                       {f.isNewFarmer ? '—' : (f.segmentName ?? '—')}

@@ -25,5 +25,4 @@ public class SegmentationConfigurationCultureType
     public SegmentationConfigurationEsg? Esg { get; set; }
     public SegmentationConfigurationYield? Yield { get; set; }
     public SegmentationConfigurationScale? Scale { get; set; }
-    public SegmentationConfigurationYieldAndScale? YieldAndScale { get; set; }
 }

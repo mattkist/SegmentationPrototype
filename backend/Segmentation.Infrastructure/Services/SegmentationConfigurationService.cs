@@ -159,9 +159,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             await db.ScaleRanges
                 .Where(r => r.SegmentationConfigurationCultureTypeId == cultureTypeId)
                 .ExecuteDeleteAsync(cancellationToken);
-            await db.YieldAndScaleRanges
-                .Where(r => r.SegmentationConfigurationCultureTypeId == cultureTypeId)
-                .ExecuteDeleteAsync(cancellationToken);
             await db.SegmentationConfigurationTechnologyScores
                 .Where(r => r.SegmentationConfigurationCultureTypeId == cultureTypeId)
                 .ExecuteDeleteAsync(cancellationToken);
@@ -184,7 +181,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Esg)!.ThenInclude(e => e!.IrregularityScores)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Yield)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Scale)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.YieldAndScale)
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
@@ -204,8 +200,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Technology)!.ThenInclude(t => t!.TechnologyScores)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Esg)!.ThenInclude(e => e!.IrregularityScores)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Yield)!.ThenInclude(y => y!.Ranges)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Scale)!.ThenInclude(s => s!.Ranges)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.YieldAndScale)!.ThenInclude(ys => ys!.Ranges);
+            .Include(c => c.CultureTypes).ThenInclude(ct => ct.Scale)!.ThenInclude(s => s!.Ranges);
 
         if (asNoTracking)
             query = query.AsNoTracking();
@@ -243,7 +238,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             ct.Esg!.Relevance = (decimal)ct.Esg.MaxScore / m;
             ct.Yield!.Relevance = (decimal)ct.Yield.MaxScore / m;
             ct.Scale!.Relevance = (decimal)ct.Scale.MaxScore / m;
-            ct.YieldAndScale!.Relevance = (decimal)ct.YieldAndScale.MaxScore / m;
         }
     }
 
@@ -401,7 +395,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         DetachAllTracked<FinancialSelfFundingRange>();
         DetachAllTracked<YieldRange>();
         DetachAllTracked<ScaleRange>();
-        DetachAllTracked<YieldAndScaleRange>();
         DetachAllTracked<SegmentationConfigurationTechnologyScore>();
         DetachAllTracked<SegmentationConfigurationEsgIrregularityScore>();
     }
@@ -426,7 +419,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
                 FinancialSelfFundingRange or
                 YieldRange or
                 ScaleRange or
-                YieldAndScaleRange or
                 SegmentationConfigurationTechnologyScore or
                 SegmentationConfigurationEsgIrregularityScore))
                 continue;
@@ -568,23 +560,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList();
         ct.Scale.Ranges = scaleRanges;
         db.ScaleRanges.AddRange(scaleRanges);
-
-        ct.YieldAndScale ??= new SegmentationConfigurationYieldAndScale { SegmentationConfigurationCultureTypeId = cultureTypeId };
-        ct.YieldAndScale.MaxScore = dto.YieldAndScale.MaxScore;
-        ct.YieldAndScale.Relevance = dto.YieldAndScale.Relevance;
-        var yieldAndScaleRanges = dto.YieldAndScale.Ranges.Select(r => new YieldAndScaleRange
-        {
-            Id = Guid.NewGuid(),
-            SegmentationConfigurationCultureTypeId = cultureTypeId,
-            YieldAndScaleCropSeasonAmount = r.YieldAndScaleCropSeasonAmount,
-            MinimumYield = r.MinimumYield,
-            MaximumYield = r.MaximumYield,
-            MinimumModule = r.MinimumModule,
-            MaximumModule = r.MaximumModule,
-            Score = r.Score
-        }).ToList();
-        ct.YieldAndScale.Ranges = yieldAndScaleRanges;
-        db.YieldAndScaleRanges.AddRange(yieldAndScaleRanges);
     }
 
     private static void ApplyKpiBlocks(SegmentationConfigurationCultureType ct, CultureTypeConfigurationWriteDto dto)
@@ -692,21 +667,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
             CropSeasonAmount = r.CropSeasonAmount,
             Score = r.Score
         }).ToList();
-
-        ct.YieldAndScale ??= new SegmentationConfigurationYieldAndScale { SegmentationConfigurationCultureTypeId = ct.Id };
-        ct.YieldAndScale.MaxScore = dto.YieldAndScale.MaxScore;
-        ct.YieldAndScale.Relevance = dto.YieldAndScale.Relevance;
-        ct.YieldAndScale.Ranges = dto.YieldAndScale.Ranges.Select(r => new YieldAndScaleRange
-        {
-            Id = Guid.NewGuid(),
-            SegmentationConfigurationCultureTypeId = ct.Id,
-            YieldAndScaleCropSeasonAmount = r.YieldAndScaleCropSeasonAmount,
-            MinimumYield = r.MinimumYield,
-            MaximumYield = r.MaximumYield,
-            MinimumModule = r.MinimumModule,
-            MaximumModule = r.MaximumModule,
-            Score = r.Score
-        }).ToList();
     }
 
     private static SegmentationConfiguration MapNewConfiguration(Guid id, SaveSegmentationConfigurationDto dto)
@@ -779,8 +739,7 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         Technology = MapTechnologyWrite(ct.Technology!),
         Esg = MapEsgWrite(ct.Esg!),
         Yield = MapYieldWrite(ct.Yield!),
-        Scale = MapScaleWrite(ct.Scale!),
-        YieldAndScale = MapYieldAndScaleWrite(ct.YieldAndScale!)
+        Scale = MapScaleWrite(ct.Scale!)
     };
 
     private static SegmentationLoyaltyWriteDto MapLoyaltyWrite(SegmentationConfigurationLoyalty l) => new()
@@ -906,21 +865,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
         }).ToList()
     };
 
-    private static SegmentationYieldAndScaleWriteDto MapYieldAndScaleWrite(SegmentationConfigurationYieldAndScale ys) => new()
-    {
-        MaxScore = ys.MaxScore,
-        Relevance = ys.Relevance,
-        Ranges = ys.Ranges.Select(r => new YieldAndScaleRangeDto
-        {
-            YieldAndScaleCropSeasonAmount = r.YieldAndScaleCropSeasonAmount,
-            MinimumYield = r.MinimumYield,
-            MaximumYield = r.MaximumYield,
-            MinimumModule = r.MinimumModule,
-            MaximumModule = r.MaximumModule,
-            Score = r.Score
-        }).ToList()
-    };
-
     private static SegmentationConfigurationDetailDto MapToDetail(SegmentationConfiguration c)
     {
         return new SegmentationConfigurationDetailDto
@@ -1018,20 +962,6 @@ public sealed class SegmentationConfigurationService(AppDbContext db) : ISegment
                         Minimum = r.Minimum,
                         Maximum = r.Maximum,
                         CropSeasonAmount = r.CropSeasonAmount,
-                        Score = r.Score
-                    }).ToList()
-                },
-                YieldAndScale = new SegmentationYieldAndScaleDetailDto
-                {
-                    MaxScore = ct.YieldAndScale!.MaxScore,
-                    Relevance = ct.YieldAndScale.Relevance,
-                    Ranges = ct.YieldAndScale.Ranges.Select(r => new YieldAndScaleRangeDto
-                    {
-                        YieldAndScaleCropSeasonAmount = r.YieldAndScaleCropSeasonAmount,
-                        MinimumYield = r.MinimumYield,
-                        MaximumYield = r.MaximumYield,
-                        MinimumModule = r.MinimumModule,
-                        MaximumModule = r.MaximumModule,
                         Score = r.Score
                     }).ToList()
                 }

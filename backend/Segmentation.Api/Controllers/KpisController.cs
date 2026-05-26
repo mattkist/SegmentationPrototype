@@ -10,63 +10,36 @@ public sealed class KpisController(
     IKpiReadService kpis,
     IKpiImportService kpiImport) : ControllerBase
 {
-    [HttpGet("loyalty")]
-    public Task<IActionResult> LoyaltyAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListLoyaltyAsync(cs, cultureTypeCode, ct), cancellationToken);
-
-    [HttpGet("quality")]
-    public Task<IActionResult> QualityAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListQualityAsync(cs, cultureTypeCode, ct), cancellationToken);
-
-    [HttpGet("financial")]
-    public Task<IActionResult> FinancialAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListFinancialAsync(cs, cultureTypeCode, ct), cancellationToken);
-
-    [HttpGet("yield-and-scale")]
-    public Task<IActionResult> YieldAndScaleAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListYieldAndScaleAsync(cs, cultureTypeCode, ct), cancellationToken);
+    [HttpGet("farmer-contract")]
+    public Task<IActionResult> FarmerContractAsync(
+        [FromQuery] int cropSeasonId,
+        [FromQuery] string? cultureTypeCode,
+        CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, _) => kpis.ListFarmerContractKpisAsync(cs, cultureTypeCode, cancellationToken), cancellationToken);
 
     [HttpGet("technologies")]
-    public Task<IActionResult> TechnologiesAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListTechnologiesAsync(cs, cultureTypeCode, ct), cancellationToken);
-
-    [HttpGet("esg")]
-    public Task<IActionResult> EsgAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListEsgAsync(cs, cultureTypeCode, ct), cancellationToken);
+    public Task<IActionResult> TechnologiesAsync(
+        [FromQuery] int cropSeasonId,
+        [FromQuery] string? cultureTypeCode,
+        CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, _) => kpis.ListTechnologiesAsync(cs, cultureTypeCode, cancellationToken), cancellationToken);
 
     [HttpGet("esg-irregularities")]
-    public Task<IActionResult> EsgIrregularitiesAsync([FromQuery] int cropSeasonId, [FromQuery] string? cultureTypeCode, CancellationToken cancellationToken) =>
-        GetKpiAsync(cropSeasonId, (cs, ct) => kpis.ListEsgIrregularitiesAsync(cs, cultureTypeCode, ct), cancellationToken);
+    public Task<IActionResult> EsgIrregularitiesAsync(
+        [FromQuery] int cropSeasonId,
+        [FromQuery] string? cultureTypeCode,
+        CancellationToken cancellationToken) =>
+        GetKpiAsync(cropSeasonId, (cs, _) => kpis.ListEsgIrregularitiesAsync(cs, cultureTypeCode, cancellationToken), cancellationToken);
 
-    [HttpPost("loyalty/import")]
+    [HttpPost("farmer-contract/import")]
     [Consumes("multipart/form-data")]
-    public Task<IActionResult> ImportLoyaltyAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
-        ImportAsync(file, kpiImport.ImportLoyaltyAsync, cancellationToken);
-
-    [HttpPost("quality/import")]
-    [Consumes("multipart/form-data")]
-    public Task<IActionResult> ImportQualityAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
-        ImportAsync(file, kpiImport.ImportQualityAsync, cancellationToken);
-
-    [HttpPost("financial/import")]
-    [Consumes("multipart/form-data")]
-    public Task<IActionResult> ImportFinancialAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
-        ImportAsync(file, kpiImport.ImportFinancialAsync, cancellationToken);
-
-    [HttpPost("yield-and-scale/import")]
-    [Consumes("multipart/form-data")]
-    public Task<IActionResult> ImportYieldAndScaleAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
-        ImportAsync(file, kpiImport.ImportYieldAndScaleAsync, cancellationToken);
+    public Task<IActionResult> ImportFarmerContractAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
+        ImportAsync(file, kpiImport.ImportFarmerContractKpisAsync, cancellationToken);
 
     [HttpPost("technologies/import")]
     [Consumes("multipart/form-data")]
     public Task<IActionResult> ImportTechnologiesAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
         ImportAsync(file, kpiImport.ImportTechnologiesAsync, cancellationToken);
-
-    [HttpPost("esg/import")]
-    [Consumes("multipart/form-data")]
-    public Task<IActionResult> ImportEsgAsync([FromForm] IFormFile file, CancellationToken cancellationToken) =>
-        ImportAsync(file, kpiImport.ImportEsgAsync, cancellationToken);
 
     [HttpPost("esg-irregularities/import")]
     [Consumes("multipart/form-data")]

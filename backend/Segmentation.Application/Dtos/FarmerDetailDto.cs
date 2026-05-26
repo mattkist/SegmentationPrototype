@@ -21,14 +21,9 @@ public sealed record OfficialSegmentationDto(
     int TechnologiesScore,
     int EsgScore,
     int YieldScore,
-    int ScaleScore,
-    int YieldAndScaleScore);
+    int ScaleScore);
 
 public sealed record FarmerKpisForSeasonDto(
-    LoyaltyKpiRowDto? Loyalty,
-    QualityKpiRowDto? Quality,
-    FinancialKpiRowDto? Financial,
-    YieldAndScaleKpiRowDto? YieldAndScale,
+    FarmerContractKpiRowDto? ContractKpi,
     IReadOnlyList<TechnologiesKpiRowDto> Technologies,
-    EsgKpiRowDto? Esg,
     IReadOnlyList<EsgIrregularityKpiRowDto> EsgIrregularities);

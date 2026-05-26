@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { apiGet } from '../api/client'
-import type { FarmerDetailDto } from '../api/types'
+import type { FarmerContractKpiRowDto, FarmerDetailDto } from '../api/types'
 import { Hint } from '../components/Hint'
 import { hints } from '../hints/en'
 
@@ -74,7 +74,8 @@ export function FarmerDetailPage() {
                     <span>Financial {data.officialSegmentation.financialScore}</span>
                     <span>Tech {data.officialSegmentation.technologiesScore}</span>
                     <span>ESG {data.officialSegmentation.esgScore}</span>
-                    <span>Y&amp;S {data.officialSegmentation.yieldAndScaleScore}</span>
+                    <span>Yield {data.officialSegmentation.yieldScore}</span>
+                    <span>Scale {data.officialSegmentation.scaleScore}</span>
                   </dd>
                 </div>
               </dl>
@@ -90,12 +91,8 @@ export function FarmerDetailPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-faint">
               KPIs — {data.cropSeasonCode}
             </h2>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <KpiCard title="Loyalty" row={data.kpis.loyalty} />
-              <KpiCard title="Quality" row={data.kpis.quality} />
-              <KpiCard title="Financial" row={data.kpis.financial} />
-              <KpiCard title="Yield & Scale" row={data.kpis.yieldAndScale} />
-              <KpiCard title="ESG" row={data.kpis.esg} />
+            <div className="mt-4">
+              <ContractKpiCard row={data.kpis.contractKpi} />
             </div>
             {data.kpis.technologies.length > 0 && (
               <div className="mt-4">
@@ -130,35 +127,65 @@ export function FarmerDetailPage() {
   )
 }
 
-function KpiCard({
-  title,
-  row,
-}: {
-  title: string
-  row: unknown
-}) {
+const CONTRACT_KPI_GROUPS: { title: string; keys: (keyof FarmerContractKpiRowDto)[] }[] = [
+  {
+    title: 'Loyalty',
+    keys: ['deliveredPercentage', 'deliveredAmountKg', 'contractedAmountKg'],
+  },
+  {
+    title: 'Quality',
+    keys: ['iqs', 'hadNtrm', 'hadQualityMixture'],
+  },
+  {
+    title: 'Financial',
+    keys: ['selfFundingPercentage', 'haveDebt'],
+  },
+  {
+    title: 'Yield & scale',
+    keys: ['yield', 'scale'],
+  },
+  {
+    title: 'ESG',
+    keys: ['reforestationPercentage', 'nativeForestPercentage'],
+  },
+]
+
+function ContractKpiCard({ row }: { row: FarmerContractKpiRowDto | null }) {
   if (!row) {
     return (
       <div className="rounded-lg border border-dashed border-black/10 p-3">
-        <h3 className="text-xs font-semibold text-ink-faint">{title}</h3>
+        <h3 className="text-xs font-semibold text-ink-faint">Farmer contract KPI</h3>
         <p className="mt-1 text-sm text-ink-muted">No data</p>
       </div>
     )
   }
-  const entries = Object.entries(row as Record<string, unknown>).filter(
-    ([k]) => !['farmerCode', 'cropSeasonId', 'cropSeasonCode'].includes(k),
-  )
+
   return (
-    <div className="rounded-lg border border-black/5 bg-surface-muted/30 p-3">
-      <h3 className="text-xs font-semibold text-ink-faint">{title}</h3>
-      <dl className="mt-2 space-y-1 text-xs">
-        {entries.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-2">
-            <dt className="text-ink-faint">{k}</dt>
-            <dd className="font-mono text-ink-muted">{String(v)}</dd>
+    <div className="space-y-3">
+      <p className="text-sm text-ink-muted">
+        Culture type: <span className="font-mono">{row.cultureTypeCode}</span>
+        {row.nonExclusive && (
+          <span className="ml-2 rounded bg-surface-muted px-2 py-0.5 text-xs">Non-exclusive</span>
+        )}
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {CONTRACT_KPI_GROUPS.map((group) => (
+          <div
+            key={group.title}
+            className="rounded-lg border border-black/5 bg-surface-muted/30 p-3"
+          >
+            <h3 className="text-xs font-semibold text-ink-faint">{group.title}</h3>
+            <dl className="mt-2 space-y-1 text-xs">
+              {group.keys.map((k) => (
+                <div key={k} className="flex justify-between gap-2">
+                  <dt className="text-ink-faint">{k}</dt>
+                  <dd className="font-mono text-ink-muted">{String(row[k])}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         ))}
-      </dl>
+      </div>
     </div>
   )
 }

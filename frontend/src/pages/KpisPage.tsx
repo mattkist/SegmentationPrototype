@@ -4,13 +4,9 @@ import { useState } from 'react'
 import { apiGet, apiPostFormImport, ApiRequestError } from '../api/client'
 import type {
   EsgIrregularityKpiRowDto,
-  EsgKpiRowDto,
-  FinancialKpiRowDto,
+  FarmerContractKpiRowDto,
   KpiImportResultDto,
-  LoyaltyKpiRowDto,
-  QualityKpiRowDto,
   TechnologiesKpiRowDto,
-  YieldAndScaleKpiRowDto,
 } from '../api/types'
 import { useCropSeason } from '../context/CropSeasonContext'
 import { Hint } from '../components/Hint'
@@ -18,46 +14,30 @@ import { hints } from '../hints/en'
 import { cn } from '../lib/cn'
 
 const tabs = [
-  { id: 'loyalty', label: 'Loyalty', hint: hints.csvLoyalty },
-  { id: 'quality', label: 'Quality', hint: hints.csvQuality },
-  { id: 'financial', label: 'Financial', hint: hints.csvFinancial },
-  { id: 'yield-and-scale', label: 'Yield & Scale', hint: hints.csvYieldAndScale },
+  { id: 'farmer-contract', label: 'Farmer contract KPI', hint: hints.csvFarmerContract },
   { id: 'technologies', label: 'Technologies', hint: hints.csvTechnologies },
-  { id: 'esg', label: 'ESG', hint: hints.csvEsg },
   { id: 'esg-irregularities', label: 'ESG irregularities', hint: hints.csvEsgIrregularities },
 ] as const
 
 type TabId = (typeof tabs)[number]['id']
 
+const importPaths: Record<TabId, string> = {
+  'farmer-contract': '/api/Kpis/farmer-contract/import',
+  technologies: '/api/Kpis/technologies/import',
+  'esg-irregularities': '/api/Kpis/esg-irregularities/import',
+}
+
 export function KpisPage() {
   const { seasonId } = useCropSeason()
-  const [tab, setTab] = useState<TabId>('loyalty')
+  const [tab, setTab] = useState<TabId>('farmer-contract')
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const qc = useQueryClient()
 
-  const loyalty = useQuery({
-    queryKey: ['kpi', 'loyalty', seasonId],
-    enabled: seasonId !== null && tab === 'loyalty',
-    queryFn: () => apiGet<LoyaltyKpiRowDto[]>(`/api/Kpis/loyalty?cropSeasonId=${seasonId}`),
-  })
-
-  const quality = useQuery({
-    queryKey: ['kpi', 'quality', seasonId],
-    enabled: seasonId !== null && tab === 'quality',
-    queryFn: () => apiGet<QualityKpiRowDto[]>(`/api/Kpis/quality?cropSeasonId=${seasonId}`),
-  })
-
-  const financial = useQuery({
-    queryKey: ['kpi', 'financial', seasonId],
-    enabled: seasonId !== null && tab === 'financial',
-    queryFn: () => apiGet<FinancialKpiRowDto[]>(`/api/Kpis/financial?cropSeasonId=${seasonId}`),
-  })
-
-  const yieldAndScale = useQuery({
-    queryKey: ['kpi', 'yield-and-scale', seasonId],
-    enabled: seasonId !== null && tab === 'yield-and-scale',
+  const farmerContract = useQuery({
+    queryKey: ['kpi', 'farmer-contract', seasonId],
+    enabled: seasonId !== null && tab === 'farmer-contract',
     queryFn: () =>
-      apiGet<YieldAndScaleKpiRowDto[]>(`/api/Kpis/yield-and-scale?cropSeasonId=${seasonId}`),
+      apiGet<FarmerContractKpiRowDto[]>(`/api/Kpis/farmer-contract?cropSeasonId=${seasonId}`),
   })
 
   const technologies = useQuery({
@@ -65,12 +45,6 @@ export function KpisPage() {
     enabled: seasonId !== null && tab === 'technologies',
     queryFn: () =>
       apiGet<TechnologiesKpiRowDto[]>(`/api/Kpis/technologies?cropSeasonId=${seasonId}`),
-  })
-
-  const esg = useQuery({
-    queryKey: ['kpi', 'esg', seasonId],
-    enabled: seasonId !== null && tab === 'esg',
-    queryFn: () => apiGet<EsgKpiRowDto[]>(`/api/Kpis/esg?cropSeasonId=${seasonId}`),
   })
 
   const esgIrregularities = useQuery({
@@ -83,15 +57,7 @@ export function KpisPage() {
   })
 
   const importMutation = useMutation({
-    mutationFn: async ({
-      file,
-      path,
-      kpiKey,
-    }: {
-      file: File
-      path: string
-      kpiKey: TabId
-    }) => {
+    mutationFn: async ({ file, path, kpiKey }: { file: File; path: string; kpiKey: TabId }) => {
       const res = await apiPostFormImport(path, file)
       return { result: res as KpiImportResultDto, kpiKey }
     },
@@ -152,7 +118,7 @@ export function KpisPage() {
                 setImportMsg(null)
                 importMutation.mutate({
                   file: f,
-                  path: `/api/Kpis/${tab}/import`,
+                  path: importPaths[tab],
                   kpiKey: tab,
                 })
               }}
@@ -166,20 +132,11 @@ export function KpisPage() {
           </p>
         )}
 
-        <Tabs.Content value="loyalty" className="mt-4 outline-none">
-          <KpiTable rows={loyalty.data} loading={loyalty.isLoading} error={loyalty.error} />
-        </Tabs.Content>
-        <Tabs.Content value="quality" className="mt-4 outline-none">
-          <KpiTable rows={quality.data} loading={quality.isLoading} error={quality.error} />
-        </Tabs.Content>
-        <Tabs.Content value="financial" className="mt-4 outline-none">
-          <KpiTable rows={financial.data} loading={financial.isLoading} error={financial.error} />
-        </Tabs.Content>
-        <Tabs.Content value="yield-and-scale" className="mt-4 outline-none">
+        <Tabs.Content value="farmer-contract" className="mt-4 outline-none">
           <KpiTable
-            rows={yieldAndScale.data}
-            loading={yieldAndScale.isLoading}
-            error={yieldAndScale.error}
+            rows={farmerContract.data}
+            loading={farmerContract.isLoading}
+            error={farmerContract.error}
           />
         </Tabs.Content>
         <Tabs.Content value="technologies" className="mt-4 outline-none">
@@ -188,9 +145,6 @@ export function KpisPage() {
             loading={technologies.isLoading}
             error={technologies.error}
           />
-        </Tabs.Content>
-        <Tabs.Content value="esg" className="mt-4 outline-none">
-          <KpiTable rows={esg.data} loading={esg.isLoading} error={esg.error} />
         </Tabs.Content>
         <Tabs.Content value="esg-irregularities" className="mt-4 outline-none">
           <KpiTable
@@ -218,6 +172,13 @@ function kpiTableColumnLabel(key: string): string {
   if (key === 'deliveredAmountKg') return 'Delivered kg'
   if (key === 'contractedAmountKg') return 'Contracted kg'
   if (key === 'deliveredPercentage') return 'Delivered %'
+  if (key === 'selfFundingPercentage') return 'Self funding %'
+  if (key === 'hadNtrm') return 'Had NTRM'
+  if (key === 'hadQualityMixture') return 'Had quality mixture'
+  if (key === 'haveDebt') return 'Have debt'
+  if (key === 'reforestationPercentage') return 'Reforestation %'
+  if (key === 'nativeForestPercentage') return 'Native forest %'
+  if (key === 'nonExclusive') return 'Non-exclusive'
   return key
 }
 

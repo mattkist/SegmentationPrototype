@@ -44,7 +44,6 @@ public sealed class CultureTypeConfigurationDetailDto
     public required SegmentationEsgDetailDto Esg { get; init; }
     public required SegmentationYieldDetailDto Yield { get; init; }
     public required SegmentationScaleDetailDto Scale { get; init; }
-    public required SegmentationYieldAndScaleDetailDto YieldAndScale { get; init; }
 }
 
 public sealed class SegmentationLoyaltyDetailDto : SegmentationLoyaltyWriteDto;
@@ -178,25 +177,6 @@ public sealed class ScaleRangeDto
     public int Score { get; init; }
 }
 
-public sealed class SegmentationYieldAndScaleDetailDto : SegmentationYieldAndScaleWriteDto;
-
-public class SegmentationYieldAndScaleWriteDto
-{
-    public int MaxScore { get; init; }
-    public decimal Relevance { get; init; }
-    public required IReadOnlyList<YieldAndScaleRangeDto> Ranges { get; init; }
-}
-
-public sealed class YieldAndScaleRangeDto
-{
-    public int YieldAndScaleCropSeasonAmount { get; init; }
-    public int MinimumYield { get; init; }
-    public int MaximumYield { get; init; }
-    public decimal MinimumModule { get; init; }
-    public decimal MaximumModule { get; init; }
-    public int Score { get; init; }
-}
-
 public sealed class CultureTypeConfigurationWriteDto
 {
     public Guid? Id { get; init; }
@@ -210,7 +190,6 @@ public sealed class CultureTypeConfigurationWriteDto
     public required SegmentationEsgWriteDto Esg { get; init; }
     public required SegmentationYieldWriteDto Yield { get; init; }
     public required SegmentationScaleWriteDto Scale { get; init; }
-    public required SegmentationYieldAndScaleWriteDto YieldAndScale { get; init; }
 }
 
 public sealed class SaveSegmentationConfigurationDto

@@ -26,8 +26,6 @@ public class SegmentationSimulationFarmer
 
     public int ScaleScore { get; set; }
 
-    public int YieldAndScaleScore { get; set; }
-
     public bool NonExclusiveFarmer { get; set; }
 
     public required string CultureTypeCode { get; set; }

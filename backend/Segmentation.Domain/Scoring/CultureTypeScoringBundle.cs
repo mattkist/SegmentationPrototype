@@ -16,7 +16,6 @@ public sealed class CultureTypeScoringBundle
     public required SegmentationConfigurationEsg Esg { get; init; }
     public required SegmentationConfigurationYield Yield { get; init; }
     public required SegmentationConfigurationScale Scale { get; init; }
-    public required SegmentationConfigurationYieldAndScale YieldAndScale { get; init; }
     public required IReadOnlyList<SegmentThreshold> SegmentThresholds { get; init; }
 }
 

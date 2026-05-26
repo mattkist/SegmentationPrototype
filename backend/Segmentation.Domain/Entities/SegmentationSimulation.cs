@@ -20,7 +20,7 @@ public class SegmentationSimulation
     /// <summary>S = Simulation, O = Official.</summary>
     public required string Status { get; set; }
 
-    public ICollection<SegmentationSimulationCropSeason> ScopeCropSeasons { get; set; } =
-        new List<SegmentationSimulationCropSeason>();
+    public ICollection<SegmentationSimulationKpiScope> KpiScopes { get; set; } =
+        new List<SegmentationSimulationKpiScope>();
     public ICollection<SegmentationSimulationFarmer> Farmers { get; set; } = new List<SegmentationSimulationFarmer>();
 }

@@ -104,70 +104,46 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                 seg.TechnologiesScore,
                 seg.EsgScore,
                 seg.YieldScore,
-                seg.ScaleScore,
-                seg.YieldAndScaleScore);
+                seg.ScaleScore);
 
-        var loyalty = await db.LoyaltyKpis.AsNoTracking()
+        var contract = await db.FarmerContractKpis.AsNoTracking()
             .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
-        var quality = await db.QualityKpis.AsNoTracking()
-            .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
-        var financial = await db.FinancialKpis.AsNoTracking()
-            .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
-        var yieldAndScale = await db.YieldAndScaleKpis.AsNoTracking()
-            .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
+
         var techRows = await db.TechnologiesKpis.AsNoTracking()
             .Include(k => k.Technology)
             .Where(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId)
             .OrderBy(k => k.TechnologyId)
             .ToListAsync(cancellationToken);
-        var esg = await db.EsgKpis.AsNoTracking()
-            .FirstOrDefaultAsync(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId, cancellationToken);
+
         var esgIrregularities = await db.EsgIrregularityKpis.AsNoTracking()
             .Include(k => k.IrregularityType)
             .Where(k => k.FarmerId == farmerId && k.CropSeasonId == cropSeasonId)
             .OrderBy(k => k.IrregularityTypeId)
             .ToListAsync(cancellationToken);
 
+        FarmerContractKpiRowDto? contractDto = contract is null
+            ? null
+            : new FarmerContractKpiRowDto(
+                farmerCode,
+                season.Id,
+                season.Code,
+                contract.CultureTypeCode,
+                contract.DeliveredPercentage,
+                contract.DeliveredAmountKg,
+                contract.ContractedAmountKg,
+                contract.Iqs,
+                contract.HadNtrm,
+                contract.HadQualityMixture,
+                contract.SelfFundingPercentage,
+                contract.HaveDebt,
+                contract.Yield,
+                contract.Scale,
+                contract.ReforestationPercentage,
+                contract.NativeForestPercentage,
+                contract.NonExclusive);
+
         var kpis = new FarmerKpisForSeasonDto(
-            loyalty is null
-                ? null
-                : new LoyaltyKpiRowDto(
-                    farmerCode,
-                    season.Id,
-                    season.Code,
-                    loyalty.CultureTypeCode,
-                    loyalty.DeliveredPercentage,
-                    loyalty.DeliveredAmountKg,
-                    loyalty.ContractedAmountKg),
-            quality is null
-                ? null
-                : new QualityKpiRowDto(
-                    farmerCode,
-                    season.Id,
-                    season.Code,
-                    quality.CultureTypeCode,
-                    quality.Iqs,
-                    quality.HadNtrm,
-                    quality.HadQualityMixture),
-            financial is null
-                ? null
-                : new FinancialKpiRowDto(
-                    farmerCode,
-                    season.Id,
-                    season.Code,
-                    financial.CultureTypeCode,
-                    financial.SelfFundingPercentage,
-                    financial.HaveDebt),
-            yieldAndScale is null
-                ? null
-                : new YieldAndScaleKpiRowDto(
-                    farmerCode,
-                    season.Id,
-                    season.Code,
-                    yieldAndScale.CultureTypeCode,
-                    yieldAndScale.Yield,
-                    yieldAndScale.Scale,
-                    yieldAndScale.ContractedAmountKg),
+            contractDto,
             techRows.Select(k => new TechnologiesKpiRowDto(
                 farmerCode,
                 season.Id,
@@ -175,15 +151,6 @@ public sealed class FarmerReadService(AppDbContext db) : IFarmerReadService
                 k.CultureTypeCode,
                 k.TechnologyId,
                 k.Technology.Name)).ToList(),
-            esg is null
-                ? null
-                : new EsgKpiRowDto(
-                    farmerCode,
-                    season.Id,
-                    season.Code,
-                    esg.CultureTypeCode,
-                    esg.ReforestationPercentage,
-                    esg.NativeForestPercentage),
             esgIrregularities.Select(k => new EsgIrregularityKpiRowDto(
                 farmerCode,
                 season.Id,

@@ -1,39 +1,23 @@
 namespace Segmentation.Application.Dtos;
 
-public sealed record LoyaltyKpiRowDto(
+public sealed record FarmerContractKpiRowDto(
     string FarmerCode,
     int CropSeasonId,
     string CropSeasonCode,
     string CultureTypeCode,
     int DeliveredPercentage,
     int DeliveredAmountKg,
-    int ContractedAmountKg);
-
-public sealed record QualityKpiRowDto(
-    string FarmerCode,
-    int CropSeasonId,
-    string CropSeasonCode,
-    string CultureTypeCode,
+    int ContractedAmountKg,
     int Iqs,
     bool HadNtrm,
-    bool HadQualityMixture);
-
-public sealed record FinancialKpiRowDto(
-    string FarmerCode,
-    int CropSeasonId,
-    string CropSeasonCode,
-    string CultureTypeCode,
+    bool HadQualityMixture,
     int SelfFundingPercentage,
-    bool HaveDebt);
-
-public sealed record YieldAndScaleKpiRowDto(
-    string FarmerCode,
-    int CropSeasonId,
-    string CropSeasonCode,
-    string CultureTypeCode,
+    bool HaveDebt,
     int Yield,
     int Scale,
-    int ContractedAmountKg);
+    int ReforestationPercentage,
+    int NativeForestPercentage,
+    bool NonExclusive);
 
 public sealed record TechnologiesKpiRowDto(
     string FarmerCode,
@@ -42,14 +26,6 @@ public sealed record TechnologiesKpiRowDto(
     string CultureTypeCode,
     int TechnologyId,
     string TechnologyName);
-
-public sealed record EsgKpiRowDto(
-    string FarmerCode,
-    int CropSeasonId,
-    string CropSeasonCode,
-    string CultureTypeCode,
-    int ReforestationPercentage,
-    int NativeForestPercentage);
 
 public sealed record EsgIrregularityKpiRowDto(
     string FarmerCode,

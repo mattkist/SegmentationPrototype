@@ -7,7 +7,6 @@ import { QualityEditor } from './QualityEditor'
 import { FinancialEditor } from './FinancialEditor'
 import { EsgEditor, TechnologyEditor } from './TechnologyEsgEditors'
 import { ScaleEditor, YieldEditor } from './YieldScaleEditors'
-import { YieldAndScaleEditor } from './YieldAndScaleEditor'
 import type { SetDraft } from './cultureTypeEditorUtils'
 import { cn } from '../../lib/cn'
 
@@ -19,7 +18,6 @@ const kpiTabs = [
   ['esg', 'ESG'],
   ['yield', 'Yield'],
   ['scale', 'Scale'],
-  ['yieldAndScale', 'Yield & Scale'],
 ] as const
 
 export function CultureTypePanel({
@@ -83,13 +81,9 @@ export function CultureTypePanel({
             {value === 'scale' && (
               <ScaleEditor draft={draft} setDraft={setDraft} cultureTypeCode={cultureTypeCode} />
             )}
-            {value === 'yieldAndScale' && (
-              <YieldAndScaleEditor draft={draft} setDraft={setDraft} cultureTypeCode={cultureTypeCode} />
-            )}
           </Tabs.Content>
         ))}
       </Tabs.Root>
     </div>
   )
 }
-

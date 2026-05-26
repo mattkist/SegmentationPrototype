@@ -17,7 +17,6 @@ const kpiRows: { id: KpiMaxKey; label: string }[] = [
   { id: 'esg', label: 'ESG' },
   { id: 'yield', label: 'Yield' },
   { id: 'scale', label: 'Scale' },
-  { id: 'yieldAndScale', label: 'Yield & Scale' },
 ]
 
 function relevancePercent(configured: number, maximum: number): string {
@@ -56,8 +55,6 @@ export function KpiTotalsBanner({
             return { ...b, yield: { ...b.yield, maxScore: value } }
           case 'scale':
             return { ...b, scale: { ...b.scale, maxScore: value } }
-          case 'yieldAndScale':
-            return { ...b, yieldAndScale: { ...b.yieldAndScale, maxScore: value } }
         }
       }),
     )

@@ -18,15 +18,14 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         if (!await db.CropSeasons.AnyAsync(c => c.Id == dto.CropSeasonId, cancellationToken))
             throw new KeyNotFoundException($"Crop season '{dto.CropSeasonId}' was not found.");
 
-        var scopeIds = dto.ScopeCropSeasonIds.Distinct().OrderByDescending(x => x).ToList();
-        if (scopeIds.Count == 0)
-            throw new ArgumentException("At least one scope crop season is required.");
+        ValidateKpiScopes(dto.KpiScopes);
 
+        var allSeasonIds = dto.KpiScopes.SelectMany(s => s.CropSeasonIds).Distinct().ToList();
         var knownSeasons = await db.CropSeasons.AsNoTracking()
-            .Where(c => scopeIds.Contains(c.Id))
+            .Where(c => allSeasonIds.Contains(c.Id))
             .Select(c => c.Id)
             .ToListAsync(cancellationToken);
-        var missing = scopeIds.Except(knownSeasons).ToList();
+        var missing = allSeasonIds.Except(knownSeasons).ToList();
         if (missing.Count > 0)
             throw new KeyNotFoundException($"Crop season(s) not found: {string.Join(", ", missing)}.");
 
@@ -57,8 +56,11 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         if (farmers.Count == 0)
             throw new InvalidOperationException("No farmers have KPI data. Cannot run simulation.");
 
+        var scopeSet = SimulationKpiScopeMapper.ToScopeSet(dto.KpiScopes);
+        var scaleSeasonIds = scopeSet.Scale.CropSeasonIdsDescending;
+
         var scaleByFarmerCulture = await LoadScaleTotalsByFarmerCultureAsync(
-            farmers.Select(f => f.Id).ToList(), scopeIds, cancellationToken);
+            farmers.Select(f => f.Id).ToList(), scaleSeasonIds, cancellationToken);
 
         var bundlesByCulture = configuration.CultureTypes.ToDictionary(
             ct => ct.CultureTypeCode,
@@ -67,11 +69,10 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         var scoringContext = new SimulationScoringContext
         {
             TargetCropSeasonId = dto.CropSeasonId,
-            ScopeCropSeasonIdsDescending = scopeIds
+            KpiScopes = scopeSet
         };
 
         var priorSeasonId = dto.CropSeasonId - 1;
-
         var simId = Guid.NewGuid();
         var rows = new List<SegmentationSimulationFarmer>(farmers.Count);
 
@@ -86,26 +87,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
 
             if (!await HasPriorSeasonContractAsync(farmer.Id, cultureTypeCode, priorSeasonId, cancellationToken))
             {
-                rows.Add(new SegmentationSimulationFarmer
-                {
-                    Id = Guid.NewGuid(),
-                    SegmentationSimulationId = simId,
-                    FarmerId = farmer.Id,
-                    CultureTypeCode = cultureTypeCode,
-                    LoyaltyScore = 0,
-                    QualityScore = 0,
-                    FinancialScore = 0,
-                    TechnologiesScore = 0,
-                    EsgScore = 0,
-                    YieldScore = 0,
-                    ScaleScore = 0,
-                    YieldAndScaleScore = 0,
-                    TotalScore = 0,
-                    NonExclusiveFarmer = farmer.NonExclusiveFarmer,
-                    SegmentationConfigurationSegmentId = null,
-                    Rank = 0,
-                    IsNewFarmer = true
-                });
+                rows.Add(NewFarmerRow(simId, farmer, cultureTypeCode));
                 continue;
             }
 
@@ -131,7 +113,6 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 EsgScore = scores.Esg,
                 YieldScore = scores.Yield,
                 ScaleScore = scores.Scale,
-                YieldAndScaleScore = scores.YieldAndScale,
                 TotalScore = total,
                 NonExclusiveFarmer = farmer.NonExclusiveFarmer,
                 SegmentationConfigurationSegmentId = segment?.Id,
@@ -150,12 +131,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             CropSeasonId = dto.CropSeasonId,
             SimulationDate = DateTime.UtcNow,
             Status = "S",
-            ScopeCropSeasons = scopeIds.Select(cs => new SegmentationSimulationCropSeason
-            {
-                Id = Guid.NewGuid(),
-                SegmentationSimulationId = simId,
-                CropSeasonId = cs
-            }).ToList(),
+            KpiScopes = SimulationKpiScopeMapper.ToEntities(simId, dto.KpiScopes),
             Farmers = rows
         };
 
@@ -165,24 +141,55 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         return (await MapDetailAsync(simId, cancellationToken))!;
     }
 
+    private static void ValidateKpiScopes(IReadOnlyList<SimulationKpiScopeInputDto> scopes)
+    {
+        if (scopes.Count == 0)
+            throw new ArgumentException("At least one KPI scope is required.");
+
+        var kinds = scopes.Select(s => s.KpiKind).ToList();
+        var missing = SimulationKpiKind.All.Except(kinds, StringComparer.OrdinalIgnoreCase).ToList();
+        if (missing.Count > 0)
+            throw new ArgumentException($"Missing KPI scope(s): {string.Join(", ", missing)}.");
+
+        foreach (var scope in scopes)
+        {
+            if (scope.CropSeasonIds.Count == 0)
+                throw new ArgumentException($"KPI scope '{scope.KpiKind}' requires at least one crop season.");
+        }
+    }
+
+    private static SegmentationSimulationFarmer NewFarmerRow(Guid simId, Farmer farmer, string cultureTypeCode) =>
+        new()
+        {
+            Id = Guid.NewGuid(),
+            SegmentationSimulationId = simId,
+            FarmerId = farmer.Id,
+            CultureTypeCode = cultureTypeCode,
+            LoyaltyScore = 0,
+            QualityScore = 0,
+            FinancialScore = 0,
+            TechnologiesScore = 0,
+            EsgScore = 0,
+            YieldScore = 0,
+            ScaleScore = 0,
+            TotalScore = 0,
+            NonExclusiveFarmer = farmer.NonExclusiveFarmer,
+            SegmentationConfigurationSegmentId = null,
+            Rank = 0,
+            IsNewFarmer = true
+        };
+
     private async Task<bool> HasPriorSeasonContractAsync(
         Guid farmerId,
         string cultureTypeCode,
         int priorSeasonId,
-        CancellationToken cancellationToken)
-    {
-        var hasLoyalty = await db.LoyaltyKpis.AsNoTracking()
+        CancellationToken cancellationToken) =>
+        await db.FarmerContractKpis.AsNoTracking()
             .AnyAsync(
-                k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode && k.CropSeasonId == priorSeasonId,
+                k => k.FarmerId == farmerId
+                     && k.CultureTypeCode == cultureTypeCode
+                     && k.CropSeasonId == priorSeasonId,
                 cancellationToken);
-        if (!hasLoyalty)
-            return false;
-
-        return await db.YieldAndScaleKpis.AsNoTracking()
-            .AnyAsync(
-                k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode && k.CropSeasonId == priorSeasonId,
-                cancellationToken);
-    }
 
     private static string? ResolveCultureTypeCode(
         Guid farmerId,
@@ -200,9 +207,8 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             .FirstOrDefault();
     }
 
-    private static CultureTypeScoringBundle BuildScoringBundle(SegmentationConfigurationCultureType ct)
-    {
-        return new CultureTypeScoringBundle
+    private static CultureTypeScoringBundle BuildScoringBundle(SegmentationConfigurationCultureType ct) =>
+        new()
         {
             CultureTypeConfigurationId = ct.Id,
             CultureTypeCode = ct.CultureTypeCode,
@@ -213,7 +219,6 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             Esg = ct.Esg!,
             Yield = ct.Yield!,
             Scale = ct.Scale!,
-            YieldAndScale = ct.YieldAndScale!,
             SegmentThresholds = ct.CultureTypeSegments
                 .Select(cs => new SegmentThreshold(
                     cs.SegmentationSegmentId,
@@ -221,17 +226,13 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                     cs.Segment.OnlyExclusiveFarmer))
                 .ToList()
         };
-    }
 
     private async Task<HashSet<Guid>> GetFarmerIdsWithAnyKpiAsync(CancellationToken cancellationToken)
     {
         var ids = new HashSet<Guid>();
-        ids.UnionWith(await db.LoyaltyKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
-        ids.UnionWith(await db.QualityKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
-        ids.UnionWith(await db.FinancialKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
-        ids.UnionWith(await db.YieldAndScaleKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.FarmerContractKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
         ids.UnionWith(await db.TechnologiesKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
-        ids.UnionWith(await db.EsgKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
+        ids.UnionWith(await db.EsgIrregularityKpis.Select(k => k.FarmerId).Distinct().ToListAsync(cancellationToken));
         return ids;
     }
 
@@ -240,7 +241,10 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         IReadOnlyList<int> scopeSeasonIds,
         CancellationToken cancellationToken)
     {
-        var rows = await db.YieldAndScaleKpis.AsNoTracking()
+        if (scopeSeasonIds.Count == 0)
+            return new Dictionary<Guid, Dictionary<string, int>>();
+
+        var rows = await db.FarmerContractKpis.AsNoTracking()
             .Where(k => farmerIds.Contains(k.FarmerId) && scopeSeasonIds.Contains(k.CropSeasonId))
             .Select(k => new { k.FarmerId, k.CultureTypeCode, k.Scale })
             .ToListAsync(cancellationToken);
@@ -260,27 +264,26 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         var query = db.SegmentationSimulations.AsNoTracking()
             .Include(s => s.SegmentationConfiguration)
             .Include(s => s.CropSeason)
-            .Include(s => s.ScopeCropSeasons)
+            .Include(s => s.KpiScopes).ThenInclude(k => k.Seasons)
             .OrderByDescending(s => s.SimulationDate)
             .AsQueryable();
 
         if (cropSeasonId is { } cs)
             query = query.Where(s => s.CropSeasonId == cs);
 
-        return await query
-            .Select(s => new SegmentationSimulationSummaryDto
-            {
-                Id = s.Id,
-                SegmentationConfigurationId = s.SegmentationConfigurationId,
-                ConfigurationName = s.SegmentationConfiguration.Name,
-                CropSeasonId = s.CropSeasonId,
-                CropSeasonCode = s.CropSeason.Code,
-                ScopeCropSeasonIds = s.ScopeCropSeasons.Select(x => x.CropSeasonId).OrderByDescending(x => x).ToList(),
-                SimulationDate = s.SimulationDate,
-                Status = s.Status,
-                FarmerCount = s.Farmers.Count
-            })
-            .ToListAsync(cancellationToken);
+        var list = await query.ToListAsync(cancellationToken);
+        return list.Select(s => new SegmentationSimulationSummaryDto
+        {
+            Id = s.Id,
+            SegmentationConfigurationId = s.SegmentationConfigurationId,
+            ConfigurationName = s.SegmentationConfiguration.Name,
+            CropSeasonId = s.CropSeasonId,
+            CropSeasonCode = s.CropSeason.Code,
+            KpiScopes = SimulationKpiScopeMapper.ToInputs(s.KpiScopes),
+            SimulationDate = s.SimulationDate,
+            Status = s.Status,
+            FarmerCount = s.Farmers.Count
+        }).ToList();
     }
 
     public Task<SegmentationSimulationDetailDto?> GetAsync(Guid id, CancellationToken cancellationToken = default) =>
@@ -294,7 +297,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
 
         var sb = new StringBuilder();
         sb.AppendLine(
-            "FarmerCode,FarmerName,CultureTypeCode,TotalScore,LoyaltyScore,QualityScore,FinancialScore,TechnologiesScore,EsgScore,YieldScore,ScaleScore,YieldAndScaleScore,SegmentName,IsNewFarmer,NonExclusiveFarmer");
+            "FarmerCode,FarmerName,CultureTypeCode,TotalScore,LoyaltyScore,QualityScore,FinancialScore,TechnologiesScore,EsgScore,YieldScore,ScaleScore,SegmentName,IsNewFarmer,NonExclusiveFarmer");
 
         foreach (var f in detail.Farmers)
         {
@@ -309,7 +312,6 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             sb.Append(f.EsgScore).Append(',');
             sb.Append(f.YieldScore).Append(',');
             sb.Append(f.ScaleScore).Append(',');
-            sb.Append(f.YieldAndScaleScore).Append(',');
             sb.Append(CsvEscape(f.SegmentName ?? string.Empty)).Append(',');
             sb.Append(f.IsNewFarmer ? "true" : "false").Append(',');
             sb.Append(f.NonExclusiveFarmer ? "true" : "false");
@@ -361,6 +363,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 Id = Guid.NewGuid(),
                 FarmerId = row.FarmerId,
                 CropSeasonId = simulation.CropSeasonId,
+                SegmentationConfigurationId = simulation.SegmentationConfigurationId,
                 TotalScore = row.TotalScore,
                 LoyaltyScore = row.LoyaltyScore,
                 QualityScore = row.QualityScore,
@@ -369,7 +372,6 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 EsgScore = row.EsgScore,
                 YieldScore = row.YieldScore,
                 ScaleScore = row.ScaleScore,
-                YieldAndScaleScore = row.YieldAndScaleScore,
                 NonExclusiveFarmer = row.NonExclusiveFarmer,
                 SegmentationConfigurationSegmentId = row.SegmentationConfigurationSegmentId,
                 Rank = 0
@@ -394,7 +396,6 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Esg)!.ThenInclude(e => e!.IrregularityScores)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Yield)!.ThenInclude(y => y!.Ranges)
             .Include(c => c.CultureTypes).ThenInclude(ct => ct.Scale)!.ThenInclude(s => s!.Ranges)
-            .Include(c => c.CultureTypes).ThenInclude(ct => ct.YieldAndScale)!.ThenInclude(ys => ys!.Ranges)
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
@@ -406,26 +407,25 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
     {
         var farmer = await db.Farmers.AsNoTracking().FirstAsync(f => f.Id == farmerId, cancellationToken);
 
-        var loyaltyRows = await db.LoyaltyKpis.AsNoTracking()
+        var contractRows = await db.FarmerContractKpis.AsNoTracking()
             .Where(k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode)
             .ToListAsync(cancellationToken);
-        var loyalty = loyaltyRows.ToDictionary(
+
+        var loyalty = contractRows.ToDictionary(
             k => k.CropSeasonId,
             k => new LoyaltyKpiSnapshot(k.DeliveredAmountKg, k.ContractedAmountKg));
 
-        var qualityRows = await db.QualityKpis.AsNoTracking()
-            .Where(k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode)
-            .ToListAsync(cancellationToken);
-        var quality = qualityRows.ToDictionary(
+        var quality = contractRows.ToDictionary(
             k => k.CropSeasonId,
             k => new QualityKpiSnapshot(k.Iqs, k.HadNtrm, k.HadQualityMixture));
 
-        var financialRows = await db.FinancialKpis.AsNoTracking()
-            .Where(k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode)
-            .ToListAsync(cancellationToken);
-        var financial = financialRows.ToDictionary(
+        var financial = contractRows.ToDictionary(
             k => k.CropSeasonId,
             k => new FinancialKpiSnapshot(k.SelfFundingPercentage, k.HaveDebt));
+
+        var contractBySeason = contractRows.ToDictionary(
+            k => k.CropSeasonId,
+            k => new ContractKpiSnapshot(k.Yield, k.Scale, k.ContractedAmountKg));
 
         var techRows = await db.TechnologiesKpis.AsNoTracking()
             .Where(k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode)
@@ -436,9 +436,6 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 g => g.Key,
                 g => new TechnologiesKpiSnapshot(g.Select(x => x.TechnologyId).ToHashSet()));
 
-        var esgRows = await db.EsgKpis.AsNoTracking()
-            .Where(k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode)
-            .ToListAsync(cancellationToken);
         var irregularityRows = await db.EsgIrregularityKpis.AsNoTracking()
             .Where(k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode)
             .ToListAsync(cancellationToken);
@@ -446,19 +443,12 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             .GroupBy(k => k.CropSeasonId)
             .ToDictionary(g => g.Key, g => g.Select(x => x.IrregularityTypeId).ToHashSet());
 
-        var esg = esgRows.ToDictionary(
+        var esg = contractRows.ToDictionary(
             k => k.CropSeasonId,
             k => new EsgKpiSnapshot(
                 k.ReforestationPercentage,
                 k.NativeForestPercentage,
                 irregularitiesBySeason.GetValueOrDefault(k.CropSeasonId) ?? []));
-
-        var yieldAndScaleRows = await db.YieldAndScaleKpis.AsNoTracking()
-            .Where(k => k.FarmerId == farmerId && k.CultureTypeCode == cultureTypeCode)
-            .ToListAsync(cancellationToken);
-        var yieldAndScale = yieldAndScaleRows.ToDictionary(
-            k => k.CropSeasonId,
-            k => new YieldAndScaleKpiSnapshot(k.Yield, k.Scale, k.ContractedAmountKg));
 
         return new FarmerKpiHistory
         {
@@ -469,7 +459,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             FinancialBySeason = financial,
             TechnologiesBySeason = technologies,
             EsgBySeason = esg,
-            YieldAndScaleBySeason = yieldAndScale
+            ContractBySeason = contractBySeason
         };
     }
 
@@ -478,7 +468,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
         var s = await db.SegmentationSimulations.AsNoTracking()
             .Include(x => x.SegmentationConfiguration)
             .Include(x => x.CropSeason)
-            .Include(x => x.ScopeCropSeasons)
+            .Include(x => x.KpiScopes).ThenInclude(k => k.Seasons)
             .Include(x => x.Farmers)
             .ThenInclude(f => f.Farmer)
             .Include(x => x.Farmers)
@@ -505,7 +495,6 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
                 EsgScore = f.EsgScore,
                 YieldScore = f.YieldScore,
                 ScaleScore = f.ScaleScore,
-                YieldAndScaleScore = f.YieldAndScaleScore,
                 NonExclusiveFarmer = f.NonExclusiveFarmer,
                 SegmentationConfigurationSegmentId = f.SegmentationConfigurationSegmentId,
                 SegmentName = f.Segment != null ? f.Segment.SegmentName : null,
@@ -514,14 +503,14 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             .ToList();
 
         var scored = farmers.Where(f => !f.IsNewFarmer).ToList();
-        var overall = BuildSegmentDistribution(scored, f => true);
+        var overall = BuildSegmentDistribution(scored);
         var byCulture = scored
             .GroupBy(f => f.CultureTypeCode)
             .OrderBy(g => g.Key)
             .Select(g => new CultureTypeSegmentDistributionDto
             {
                 CultureTypeCode = g.Key,
-                Segments = BuildSegmentDistribution(g.ToList(), _ => true)
+                Segments = BuildSegmentDistribution(g.ToList())
             })
             .ToList();
 
@@ -532,7 +521,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
             ConfigurationName = s.SegmentationConfiguration.Name,
             CropSeasonId = s.CropSeasonId,
             CropSeasonCode = s.CropSeason.Code,
-            ScopeCropSeasonIds = s.ScopeCropSeasons.Select(x => x.CropSeasonId).OrderByDescending(x => x).ToList(),
+            KpiScopes = SimulationKpiScopeMapper.ToInputs(s.KpiScopes),
             SimulationDate = s.SimulationDate,
             Status = s.Status,
             Farmers = farmers,
@@ -542,8 +531,7 @@ public sealed class SegmentationSimulationService(AppDbContext db) : ISegmentati
     }
 
     private static IReadOnlyList<SegmentShareDto> BuildSegmentDistribution(
-        IReadOnlyList<SegmentationSimulationFarmerDto> farmers,
-        Func<SegmentationSimulationFarmerDto, bool> _)
+        IReadOnlyList<SegmentationSimulationFarmerDto> farmers)
     {
         if (farmers.Count == 0)
             return [];

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { Leaf, Users, Table2, SlidersHorizontal, FlaskConical, Home } from 'lucide-react'
+import { Leaf, Users, Table2, SlidersHorizontal, FlaskConical, Home, ClipboardCheck } from 'lucide-react'
 import { cn } from '../lib/cn'
 import { Hint } from './Hint'
 import { hints } from '../hints/en'
@@ -16,6 +16,7 @@ const nav: {
   { to: '/kpis', label: 'KPI data', icon: Table2 },
   { to: '/configurations', label: 'Configurations', icon: SlidersHorizontal },
   { to: '/simulations', label: 'Simulations', icon: FlaskConical },
+  { to: '/segmentation-management', label: 'Management', icon: ClipboardCheck },
 ]
 
 export function AppLayout() {

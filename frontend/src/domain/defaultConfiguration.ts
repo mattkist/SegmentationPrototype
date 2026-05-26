@@ -56,27 +56,17 @@ export function createCultureTypeBlock(code: string): CultureTypeConfigurationWr
       irregularityScores: [],
     },
     yield: {
-      maxScore: 0,
-      relevance: 0,
-      ranges: [],
+      maxScore: 10,
+      relevance: 0.1,
+      ranges: [
+        { minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 10 },
+      ],
     },
     scale: {
-      maxScore: 0,
-      relevance: 0,
-      ranges: [],
-    },
-    yieldAndScale: {
-      maxScore: 20,
-      relevance: 0.2,
+      maxScore: 10,
+      relevance: 0.1,
       ranges: [
-        {
-          yieldAndScaleCropSeasonAmount: 1,
-          minimumYield: 0,
-          maximumYield: 999999,
-          minimumModule: 0,
-          maximumModule: 999999,
-          score: 10,
-        },
+        { minimum: 0, maximum: 999999, cropSeasonAmount: 1, score: 10 },
       ],
     },
   }

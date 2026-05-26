@@ -24,8 +24,8 @@ public sealed class FarmerKpiHistory
     public IReadOnlyDictionary<int, EsgKpiSnapshot> EsgBySeason { get; init; } =
         new Dictionary<int, EsgKpiSnapshot>();
 
-    public IReadOnlyDictionary<int, YieldAndScaleKpiSnapshot> YieldAndScaleBySeason { get; init; } =
-        new Dictionary<int, YieldAndScaleKpiSnapshot>();
+    public IReadOnlyDictionary<int, ContractKpiSnapshot> ContractBySeason { get; init; } =
+        new Dictionary<int, ContractKpiSnapshot>();
 }
 
 public readonly record struct LoyaltyKpiSnapshot(int DeliveredAmountKg, int ContractedAmountKg);
@@ -41,4 +41,4 @@ public readonly record struct EsgKpiSnapshot(
     int NativeForestPercentage,
     HashSet<int> IrregularityTypeIds);
 
-public readonly record struct YieldAndScaleKpiSnapshot(int Yield, int Scale, int ContractedAmountKg);
+public readonly record struct ContractKpiSnapshot(int Yield, int Scale, int ContractedAmountKg);

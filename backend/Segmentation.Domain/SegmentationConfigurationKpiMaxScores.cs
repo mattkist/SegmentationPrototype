@@ -25,8 +25,6 @@ public static class SegmentationConfigurationKpiMaxScores
             throw new InvalidOperationException("Yield configuration is required.");
         if (cultureType.Scale is null)
             throw new InvalidOperationException("Scale configuration is required.");
-        if (cultureType.YieldAndScale is null)
-            throw new InvalidOperationException("Yield & Scale configuration is required.");
 
         var loyalty = cultureType.Loyalty;
         var loyaltyDerived = MaxPositiveOrZero(loyalty.SeasonQuantityRanges.Select(r => r.Score))
@@ -56,9 +54,6 @@ public static class SegmentationConfigurationKpiMaxScores
         var scale = cultureType.Scale;
         var scaleDerived = scale.Ranges.Count == 0 ? 0 : scale.Ranges.Max(r => r.Score);
 
-        var yieldAndScale = cultureType.YieldAndScale;
-        var yieldAndScaleDerived = MaxPositiveOrZero(yieldAndScale.Ranges.Select(r => r.Score));
-
         return new DerivedKpiMaxScores(
             loyaltyDerived,
             qualityDerived,
@@ -66,8 +61,7 @@ public static class SegmentationConfigurationKpiMaxScores
             technologyDerived,
             esgDerived,
             yieldDerived,
-            scaleDerived,
-            yieldAndScaleDerived);
+            scaleDerived);
     }
 
     public static int SumKpiMaxScores(SegmentationConfigurationCultureType cultureType)
@@ -78,8 +72,7 @@ public static class SegmentationConfigurationKpiMaxScores
             + cultureType.Technology!.MaxScore
             + cultureType.Esg!.MaxScore
             + cultureType.Yield!.MaxScore
-            + cultureType.Scale!.MaxScore
-            + cultureType.YieldAndScale!.MaxScore;
+            + cultureType.Scale!.MaxScore;
     }
 
     public static KpiMaxScoreValidationResult ValidateCultureType(SegmentationConfigurationCultureType cultureType)
@@ -110,7 +103,6 @@ public static class SegmentationConfigurationKpiMaxScores
         ValidateBlockMaxScore(errors, cultureType.CultureTypeCode, "ESG", cultureType.Esg!.MaxScore, derived.Esg);
         ValidateBlockMaxScore(errors, cultureType.CultureTypeCode, "Yield", cultureType.Yield!.MaxScore, derived.Yield);
         ValidateBlockMaxScore(errors, cultureType.CultureTypeCode, "Scale", cultureType.Scale!.MaxScore, derived.Scale);
-        ValidateBlockMaxScore(errors, cultureType.CultureTypeCode, "Yield & Scale", cultureType.YieldAndScale!.MaxScore, derived.YieldAndScale);
 
         return new KpiMaxScoreValidationResult(
             errors.Count == 0,
@@ -146,8 +138,7 @@ public readonly record struct DerivedKpiMaxScores(
     int Technology,
     int Esg,
     int Yield,
-    int Scale,
-    int YieldAndScale);
+    int Scale);
 
 public readonly record struct KpiMaxScoreValidationResult(
     bool IsValid,

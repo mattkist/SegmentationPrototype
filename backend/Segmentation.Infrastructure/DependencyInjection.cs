@@ -20,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<IKpiImportService, KpiImportService>();
         services.AddScoped<ISegmentationConfigurationService, SegmentationConfigurationService>();
         services.AddScoped<ISegmentationSimulationService, SegmentationSimulationService>();
+        services.AddScoped<ISegmentationManagementService, SegmentationManagementService>();
 
         return services;
     }

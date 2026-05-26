@@ -17,7 +17,6 @@ export type KpiMaxKey =
   | 'esg'
   | 'yield'
   | 'scale'
-  | 'yieldAndScale'
 
 /** Mirrors backend SegmentationConfigurationKpiMaxScores derived caps (rules only). */
 export function deriveKpiMaxScores(block: CultureTypeConfigurationWriteDto) {
@@ -50,11 +49,6 @@ export function deriveKpiMaxScores(block: CultureTypeConfigurationWriteDto) {
   const scaleDerived =
     block.scale.ranges.length === 0 ? 0 : Math.max(...block.scale.ranges.map((r) => r.score))
 
-  const yieldAndScaleDerived =
-    block.yieldAndScale.ranges.length === 0
-      ? 0
-      : maxPositiveOrZero(block.yieldAndScale.ranges.map((r) => r.score))
-
   const derived = {
     loyalty: loyaltyDerived,
     quality: qualityDerived,
@@ -63,7 +57,6 @@ export function deriveKpiMaxScores(block: CultureTypeConfigurationWriteDto) {
     esg: esgDerived,
     yield: yieldDerived,
     scale: scaleDerived,
-    yieldAndScale: yieldAndScaleDerived,
   }
 
   const configured = {
@@ -74,7 +67,6 @@ export function deriveKpiMaxScores(block: CultureTypeConfigurationWriteDto) {
     esg: block.esg.maxScore,
     yield: block.yield.maxScore,
     scale: block.scale.maxScore,
-    yieldAndScale: block.yieldAndScale.maxScore,
   }
 
   const sumConfigured = Object.values(configured).reduce((a, b) => a + b, 0)

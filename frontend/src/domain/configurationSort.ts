@@ -50,10 +50,6 @@ export function normalizeConfigurationOrder(
       ...ct.scale,
       ranges: sortByScoreDesc(ct.scale.ranges),
     },
-    yieldAndScale: {
-      ...ct.yieldAndScale,
-      ranges: sortByScoreDesc(ct.yieldAndScale.ranges),
-    },
   }))
 
   return syncSegmentThresholdsForHeader({ ...draft, segments, cultureTypes })

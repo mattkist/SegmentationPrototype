@@ -14,12 +14,8 @@ public class Farmer
     public bool NonExclusiveFarmer { get; set; }
 
     public ICollection<FarmerClusterFarmer> ClusterLinks { get; set; } = new List<FarmerClusterFarmer>();
-    public ICollection<LoyaltyKpi> LoyaltyKpis { get; set; } = new List<LoyaltyKpi>();
-    public ICollection<QualityKpi> QualityKpis { get; set; } = new List<QualityKpi>();
-    public ICollection<FinancialKpi> FinancialKpis { get; set; } = new List<FinancialKpi>();
-    public ICollection<YieldAndScaleKpi> YieldAndScaleKpis { get; set; } = new List<YieldAndScaleKpi>();
+    public ICollection<FarmerContractKpi> ContractKpis { get; set; } = new List<FarmerContractKpi>();
     public ICollection<TechnologiesKpi> TechnologiesKpis { get; set; } = new List<TechnologiesKpi>();
-    public ICollection<EsgKpi> EsgKpis { get; set; } = new List<EsgKpi>();
     public ICollection<EsgIrregularityKpi> EsgIrregularityKpis { get; set; } = new List<EsgIrregularityKpi>();
     public ICollection<SegmentationSimulationFarmer> SimulationResults { get; set; } = new List<SegmentationSimulationFarmer>();
     public ICollection<FarmerSegmentation> Segmentations { get; set; } = new List<FarmerSegmentation>();
