@@ -1,0 +1,148 @@
+PROJECT: MVP 2 Farming Engagement Hub
+Functionality: User Journey Back Office PA - Web
+User Story ID:  MD-CC-057
+Functional Specification For:
+(X) Web Application
+( ) Mobile Application
+Prototype:
+App: BAT - Agri 360 App – Figma
+Functional Specification Document
+Contents
+TOC \o "1-4" \z \u \h1.Revision HistoryPAGEREF _Toc436305457 \h2
+2.Sign-offPAGEREF _Toc1317430858 \h2
+3.Process SpecificationPAGEREF _Toc592436754 \h2
+1.1Business ProcessPAGEREF _Toc145538916 \h3
+4.User Interface & User ExperiencePAGEREF _Toc2114463965 \h4
+4.1List of Screens - WebPAGEREF _Toc879069260 \h5
+4.1.1SCREEN 01: Contracts – ListPAGEREF _Toc542750649 \h5
+4.1.2SCREEN 02: New Contract – ListPAGEREF _Toc935551906 \h8
+4.2List of Screens - MobilePAGEREF _Toc202936907 \h11
+4.2.1SCREEN 01: Contracts – ListPAGEREF _Toc1549126382 \h11
+4.2.2SCREEN 02: New Contract – ListPAGEREF _Toc282623159 \h13
+4.3Business RulesPAGEREF _Toc1981939146 \h15
+4.4Dependencies on Predecessor User StoriesPAGEREF _Toc642946983 \h16
+5.Policy & Regulatory RequirementsPAGEREF _Toc1776250934 \h17
+5.1Applicable BAT Business ControlsPAGEREF _Toc1941733463 \h17
+5.2Legal and/or Fiscal RequirementsPAGEREF _Toc1380952206 \h17
+6.Technical RequirementsPAGEREF _Toc1058045251 \h17
+6.1Specific Non-Functional RequirementsPAGEREF _Toc1406840446 \h17
+6.2System Integrations (APIs/Endpoints)PAGEREF _Toc441935090 \h18
+6.3AutomationsPAGEREF _Toc59571266 \h18
+7.Positive & Negative TestingPAGEREF _Toc743022332 \h18
+7.1Test Scenarios and Acceptance CriteriaPAGEREF _Toc1251512511 \h18
+7.1.1WebPAGEREF _Toc69263537 \h18
+Revision History
+Date
+Name
+Change
+Version
+18/05/2026
+Matheus Kist
+Initial document draft
+1.0
+Sign-off
+Date
+Name
+Role
+Process Specification
+In this section you can find detailed business process description and the corresponding workflows.
+Business Process
+  What?
+The Home Dashboard consolidates operational, financial, and agronomic data from all farmers assigned to the logged user's specific hierarchical node. The visibility of the dashboard cards is dynamic and strictly coupled with the lifecycle defined in the crop calendar (Crop Calendar).
+  Who?
+Agri360 Users.
+  When?
+Used on a daily basis as home page for login.
+  Where?
+Agri360 (Home/Dashboard Screen).
+  Why?
+To centralize key KPIs into a single, unified view and deliver an intuitive, frictionless entry point for all operational sub-modules without cluttering the main stream area.
+  How?
+The system renders dashboard cards based on the Crop Calendar status.
+User Interface & User Experience
+In this section you can find details on Screens, their purpose, expected navigation behavior, CRUD processing description and Data Requirements. Furthermore, you can also find Business Rules, their triggers, corresponding validations, and details on error handling.
+4.1 General Architecture & Shared Business Rules
+Dynamic Card Rendering (Crop Calendar Dependency):
+If a crop season's contracting phase is Active in the calendar -> Render the Contracting Card.
+If any crop season is Active -> Render the Field Notebook Card.
+If a crop season's commercialization phase is Active -> Render the Commercialization Card (Subject to the Hold rule).
+Tobacco Type Tabs (CultureType): All metric cards (Contracting, Commercialization, and Field Notebook) must provide horizontal tab navigation to segregate data by tobacco type (e.g., FCV, BLY, AM), dynamically filtering the consolidated values based on the selection.
+User Hierarchy Restriction: The dashboard and search entity results must strictly isolate and consolidate data from clusters and farmers belonging exclusively to the hierarchical tree of the logged-in user.
+4.2 List of Screens - Web
+4.2.1 SCREEN 01: Dashboard - Home (Main View)
+Screen Purpose: The initial screen of the mobile app that presents the general data consolidation of the User’s hierarchical node.
+4.2.2 SCREEN 02: Card - Contracting (Contracting Phase)
+Screen Purpose: To monitor the progress of contracting targets and the compliance/credit profile of the user’s hierarchical node for the card’s crop season.
+Data Fields & KPI Specifications:
+Production Target (Kg):
+Metric: Displays a progress bar comparing the total volume contracted against the target.
+Formula:
+Contracted Farmers:
+Metric: Displays the number of farmers with a signed contract for this crop season vs. the total active farmers in the hierarchical branch.
+Active Farmer Rule: A farmer who held an active contract in the immediately preceding crop season.
+Segmentation: A graphical representation (Donut Chart) breaking down contracted farmers by their classification/segmentation (e.g., S2, S3, S4 or future Diamond, Gold, Silver, Bronze).
+Variety Profile:
+Metric: A vertical bar chart comparing the planted area target (Target in Hectares) per seed variety (e.g., BAT 1009, BAT 2009) vs. the total quantity of seeds commercialized/distributed.
+Approved Pre-Assessment (ESG):
+Metric: A simple counter displaying the absolute number of farmers who have completed the ESG pre-assessment and are flagged with an Approved status for the current crop cycle.
+Indebtedness Level:
+Metric: The projected average percentage of debt for all contracted farmers in the current season.
+Calculation Formula:
+4.2.3 SCREEN 03: Card - Field Notebook (Field Notebook)
+Screen Purpose: To centralize the completion progress of the field notebooks across all farmers for this hierarchical tree branch.
+Data Fields & KPI Specifications:
+General Metric per Topic: Displays the completion percentage for each agricultural stage (Seedbed: Sowing/Fertilizer/Pesticide/Pest Occurrence, Field: Planting/Organic Fertilizer/Pest Occurrence, Topping, Harvest).
+Metric Business Rule: The calculation is tracked at the Cluster level. If a Cluster has at least one (1) record submitted in the corresponding form (e.g., Sowing), that cluster is marked as "Completed" for that specific topic.
+Formula:
+4.2.5 SCREEN 05: Card - Commercialization (Commercialization Phase) - [STATUS: ON HOLD]
+Screen Purpose: To provide financial visibility and track the intake flow of tobacco during the commercialization season.
+CRITICAL BUSINESS RULE: This card and all its internal sub-components are strictly classified as "ON HOLD". The development of this user interface and its underlying data integrations is deferred until the technical Discovery for the BUYING user stories is completed and delivered.
+Data Fields & Specification (Draft for Future Implementation):
+Delivered Tobacco (Kg):
+Completed Contracts:
+% Tobacco Flow X % Debt Recovery: A timeline chart crossing the physical intake flow of tobacco against real financial debt amortization.
+IQS: Average Crop Quality Index (IQS) of the area's farmers (Requires KPI definition).
+Competitor Balance: Total volume in Kg registered under the Competitor Estimate field.
+Price/Kg: Average price paid per Kg of tobacco received in the Field Technician's area.
+Tobacco Flow: Intake/logistics flow indicator.
+Current Indebtedness: Real-time financial calculation balancing the farmer's remaining crop season debt against the estimated physical volume of tobacco that is still pending delivery.
+Policy & Regulatory Requirements
+In this section you can find relevant Business Controls and LFR details so that the solution design can take those in consideration aiming to satisfy such requirements.
+Applicable BAT Business Controls
+(Specify any business controls that are applicable for the related business process, and the relevant control description that should be satisfied by the solution design)
+ORIGIN
+(Standard Controls OR Control Navigator)
+CONTROL ID
+(Refer to the Controls Documents)
+CONTROL DESCRIPTION
+(Only the part which is relevant for this Story)
+Legal and/or Fiscal Requirements
+(Specify any LFRs applicable for the related business process, and the relevant requirements that should be satisfied by the solution design)
+Not Applicable
+Technical Requirements
+In this section you can find specific technical requirements for this User Story, including references to System Integrations (for which details are declared within “Agri360 - Integrations Inventory” document) as well as any Automations required.
+Specific Non-Functional Requirements
+(Specify any Non-Functional Requirement which exceeds or except the overall Agri360 requirements)
+Not Applicable
+System Integrations (APIs/Endpoints)
+(This section provides details about the APIs and endpoints associated with the functionality)
+Not Applicable
+Automations
+(This section discusses any automated processes or functionalities within the module/functionality)
+Not Applicable
+Positive & Negative Testing
+In this section you can find test scripts for “positive tests” on the end-to-end user processes/capabilities which are goals of this User Story, and the test scripts for “negative tests” which aim is to check if Business Rules are working as expected.
+Test Scenarios and Acceptance Criteria
+Web
+Scenario 1: Dynamic Card Rendering Based on Crop Calendar (Positive)
+Test Steps:
+Configure the backend so that the Crop Calendar for the 2026 season has the Contracting Phase Active and the Commercialization Phase Inactive.
+Log into the web  application using a registered Field Technician account.
+Validate the rendering behavior of the Home screen.
+Success Criteria: * The Contracting Card must be displayed with all data correctly populated.
+The Commercialization Card must not be rendered on the screen.
+Scenario 2: Validation of the Commercialization Card Hold Status (Negative)
+Test Steps:
+Inspect the mobile frontend build package or analyze the Home screen component tree.
+Verify if placeholders or API call triggers for the Commercialization Card are deactivated/mocked according to the Hold constraint.
+Success Criteria: The system must not trigger network requests to non-existent Buying endpoints, preventing app crashes or unhandled error screens in production while the feature is frozen.
